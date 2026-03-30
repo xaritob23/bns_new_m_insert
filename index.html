@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>Brand New Subway</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Source+Code+Pro:wght@400;700&family=Bebas+Neue&family=Nunito:wght@400;700&family=Montserrat:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+/* ── Moscow Sans via GitHub raw ── */
+@font-face{font-family:'Moscow Sans';src:url('https://raw.githubusercontent.com/nicothin/MoscowSans/main/fonts/MoscowSans-Regular.woff2') format('woff2');font-weight:400}
+@font-face{font-family:'Moscow Sans';src:url('https://raw.githubusercontent.com/nicothin/MoscowSans/main/fonts/MoscowSans-Bold.woff2') format('woff2');font-weight:700}
+
+:root{
+  --font:'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --panel-w:320px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a;color:#eee}
+#app{display:flex;height:100vh;width:100vw;position:relative}
+#map-wrap{flex:1;position:relative;overflow:hidden;min-width:0}
+#map{width:100%;height:100%}
+
+/* ─────────────────────────────────────────
+   PANEL
+───────────────────────────────────────── */
+#panel{
+  width:var(--panel-w);flex-shrink:0;
+  background:#222;color:#eee;
+  display:flex;flex-direction:column;
+  overflow:hidden;border-left:1px solid #3a3a3a;
+  z-index:400;transition:transform .3s ease;
+}
+#panel-scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+#panel-scroll::-webkit-scrollbar{width:3px}
+#panel-scroll::-webkit-scrollbar-thumb{background:#444;border-radius:2px}
+
+/* Panel sections */
+.p-section{padding:8px 12px;border-bottom:1px solid #333}
+.p-title{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:#555;margin-bottom:6px;font-weight:600}
+
+#panel-header{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 12px;border-bottom:1px solid #333;background:#1e1e1e;flex-shrink:0
+}
+#panel-header h1{font-size:17px;font-weight:700;color:#fff;flex:1;font-family:var(--font)}
+#mobile-close-btn{display:none;background:none;border:none;color:#888;font-size:20px;cursor:pointer;padding:0 2px;line-height:1}
+
+/* start presets */
+.start-btn{
+  display:block;width:100%;background:#2a2a2a;border:1px solid #444;color:#ccc;
+  padding:7px 10px;border-radius:5px;cursor:pointer;font-size:12px;text-align:left;
+  margin-bottom:4px;transition:background .15s;font-family:var(--font)
+}
+.start-btn:hover{background:#333}
+
+/* Line grid */
+#lines-section{padding:8px 10px 6px;border-bottom:1px solid #333}
+.lines-row{display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap}
+.line-btn{
+  width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:12px;cursor:pointer;
+  border:2px solid transparent;
+  transition:transform .12s,box-shadow .12s,border-color .12s;
+  user-select:none;flex-shrink:0;font-family:var(--font);
+  position:relative;
+}
+.line-btn:hover{transform:scale(1.12);box-shadow:0 2px 8px rgba(0,0,0,.6)}
+.line-btn.active{border-color:#fff!important;transform:scale(1.18);box-shadow:0 0 0 3px rgba(255,255,255,.15)}
+.line-btn.disabled{opacity:0.22;cursor:not-allowed}
+.line-btn.disabled:hover{transform:none;box-shadow:none}
+/* train running indicator dot */
+.line-btn .train-dot{
+  position:absolute;bottom:-2px;right:-2px;
+  width:8px;height:8px;border-radius:50%;
+  background:#4f4;border:1px solid #111;
+  display:none;
+}
+.line-btn.has-trains .train-dot{display:block}
+
+#extra-lines-wrap{display:none;margin-bottom:4px}
+#extra-lines-row{display:flex;gap:4px;flex-wrap:wrap}
+
+.expand-btn{
+  width:100%;background:#2a2a2a;border:1px solid #444;color:#999;
+  padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11px;
+  text-align:left;margin-bottom:4px;transition:background .15s;font-family:var(--font)
+}
+.expand-btn:hover{background:#333}
+
+/* custom line form */
+#custom-line-form{display:none;padding:8px;background:#1a1a1a;border-radius:5px;border:1px solid #333;margin-top:4px}
+.ff{margin-bottom:6px}
+.ff label{display:block;font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.ff input[type=text]{width:100%;background:#252525;border:1px solid #444;color:#eee;padding:5px 8px;border-radius:4px;font-size:12px;outline:none;font-family:var(--font)}
+.ff input[type=text]:focus{border-color:#666}
+.ff input[type=number]{width:100%;background:#252525;border:1px solid #444;color:#eee;padding:5px 8px;border-radius:4px;font-size:12px;outline:none;font-family:var(--font)}
+.ff input[type=number]:focus{border-color:#666}
+.cpair{display:flex;gap:6px}
+.cpick{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.cpick label{font-size:9px;color:#666}
+.cpick input[type=color]{width:100%;height:26px;border:1px solid #444;border-radius:3px;cursor:pointer;padding:2px;background:#252525}
+.fa-row{display:flex;gap:5px;margin-top:6px}
+.fb{flex:1;padding:5px 0;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--font)}
+.fb:hover{opacity:.85}
+.fb-ok{background:#3a5a8a;color:#adf}
+.fb-cancel{background:#3a3a3a;color:#aaa}
+.fb-danger{background:#5a2a2a;color:#f99}
+
+/* ─────────────────────────────────────────
+   ACTIVE LINE CONTROLS
+───────────────────────────────────────── */
+#controls-bar{display:none;background:#1e1e1e;padding:8px 12px;border-bottom:1px solid #333}
+#controls-bar.visible{display:flex;flex-direction:column;gap:5px}
+#ali{display:flex;align-items:center;gap:7px;margin-bottom:3px}
+#ali-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+#ali-label{font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ali-btns{display:flex;gap:3px}
+.ali-btn{padding:3px 7px;background:#2a2a2a;border:1px solid #444;color:#ccc;border-radius:3px;cursor:pointer;font-size:10px;font-family:var(--font)}
+.ali-btn:hover{background:#333}
+.ali-btn.danger{border-color:#5a2a2a;color:#f88}
+.ali-btn.danger:hover{background:#5a2a2a}
+
+.ctrl-row{display:flex;align-items:center;justify-content:space-between}
+.ctrl-lbl{font-size:11px;color:#aaa}
+.sw{position:relative;width:34px;height:18px;display:inline-block}
+.sw input{display:none}
+.sw-track{position:absolute;inset:0;background:#333;border-radius:9px;cursor:pointer;transition:background .2s}
+.sw-track::after{content:'';position:absolute;width:12px;height:12px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s}
+.sw input:checked+.sw-track{background:#3a6a9a}
+.sw input:checked+.sw-track::after{transform:translateX(16px)}
+
+/* ─────────────────────────────────────────
+   ROUTE DIAGRAM
+───────────────────────────────────────── */
+#route-section{border-bottom:1px solid #333}
+#route-header{display:flex;align-items:center;gap:5px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:600;color:#ccc;user-select:none}
+#route-header:hover{background:#2a2a2a}
+#rti{font-size:8px;color:#666;transition:transform .2s;display:inline-block}
+#rti.open{transform:rotate(90deg)}
+#route-body{display:none;padding:4px 12px 10px;max-height:300px;overflow-y:auto}
+#route-body.open{display:block}
+.no-msg{font-size:11px;color:#555;font-style:italic;padding:3px 0}
+
+/* train section inside route diagram */
+#train-section{margin-top:8px;border-top:1px solid #2a2a2a;padding-top:8px}
+.train-section-title{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px}
+.train-form{background:#1a1a1a;border:1px solid #2e2e2e;border-radius:5px;padding:8px;margin-bottom:6px}
+.train-form .ff{margin-bottom:5px}
+#train-list{display:flex;flex-direction:column;gap:4px;margin-bottom:5px}
+.train-item{
+  display:flex;align-items:center;gap:6px;
+  background:#1e1e1e;border:1px solid #2e2e2e;border-radius:4px;
+  padding:5px 8px;font-size:11px;
+}
+.train-item-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 4px currentColor}
+.train-item-info{flex:1;overflow:hidden}
+.train-item-name{font-weight:600;color:#ddd;font-size:11px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.train-item-sub{font-size:9px;color:#666}
+.train-item-btns{display:flex;gap:3px}
+.ti-btn{padding:2px 6px;background:#2a2a2a;border:1px solid #3a3a3a;border-radius:3px;cursor:pointer;font-size:10px;color:#aaa;font-family:var(--font)}
+.ti-btn:hover{background:#333}
+.ti-btn.stop{border-color:#5a3a1a;color:#fa8}
+.ti-btn.stop:hover{background:#5a3a1a}
+.ti-btn.del{border-color:#5a1a1a;color:#f66}
+.ti-btn.del:hover{background:#5a1a1a}
+.ti-btn.run{border-color:#1a4a1a;color:#6f6}
+.ti-btn.run:hover{background:#1a4a1a}
+#new-train-btn{
+  width:100%;padding:5px;background:#1e3a1e;border:1px solid #2a5a2a;color:#8f8;
+  border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font)
+}
+#new-train-btn:hover{background:#2a4a2a}
+#new-train-form{display:none}
+
+/* ─────────────────────────────────────────
+   SETTINGS
+───────────────────────────────────────── */
+#settings-section{padding:8px 12px;border-bottom:1px solid #333}
+.stitle{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px}
+.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.slabel{font-size:11px;color:#aaa}
+.sselect{background:#252525;border:1px solid #444;color:#ddd;padding:3px 6px;border-radius:4px;font-size:11px;cursor:pointer;outline:none;max-width:160px;font-family:var(--font)}
+
+/* ─────────────────────────────────────────
+   STATS
+───────────────────────────────────────── */
+#stats-section{padding:8px 12px;border-bottom:1px solid #333}
+.stat-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.stat-row:last-child{margin-bottom:0}
+.stat-icon{font-size:16px;opacity:.6;width:20px;text-align:center}
+.stat-value{font-size:18px;font-weight:700;color:#fff;line-height:1;font-family:var(--font)}
+.stat-label{font-size:10px;color:#666;margin-top:1px}
+
+/* ─────────────────────────────────────────
+   BOTTOM BUTTONS
+───────────────────────────────────────── */
+#bottom-btns{display:flex;gap:5px;padding:8px 10px;border-top:1px solid #333;flex-shrink:0;background:#1a1a1a}
+.bottom-btn{flex:1;padding:7px 4px;background:#2a2a2a;border:1px solid #444;color:#ccc;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;transition:background .15s;font-family:var(--font);white-space:nowrap}
+.bottom-btn:hover{background:#333}
+.bottom-btn.primary{background:#1e3a5a;border-color:#3a6a9a;color:#8ad}
+.bottom-btn.primary:hover{background:#2a4a6a}
+
+/* ─────────────────────────────────────────
+   MAP OVERLAYS
+───────────────────────────────────────── */
+.leaflet-container{background:#d0ccc0}
+.leaflet-control-zoom a{background:#222!important;color:#ccc!important;border-color:#444!important}
+.leaflet-control-zoom a:hover{background:#2a2a2a!important}
+.leaflet-control-attribution{background:rgba(0,0,0,.6)!important;color:#888!important;font-size:9px!important}
+.leaflet-control-attribution a{color:#888!important}
+
+#mode-bar{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:#aaa;font-size:10px;padding:3px 8px;z-index:600;pointer-events:none;display:flex;justify-content:space-between;font-family:var(--font)}
+#toast{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#eee;padding:5px 16px;border-radius:16px;font-size:11px;z-index:700;pointer-events:none;display:none;white-space:nowrap;font-family:var(--font)}
+
+/* map provider select (top right) */
+#map-prov-bar{position:absolute;top:8px;right:8px;z-index:700}
+#map-prov-sel{background:#222;border:1px solid #444;color:#ccc;padding:4px 7px;border-radius:4px;font-size:10px;cursor:pointer;outline:none;font-family:var(--font)}
+
+/* mobile panel toggle button */
+#panel-toggle{
+  display:none;
+  position:absolute;bottom:30px;right:12px;
+  width:44px;height:44px;border-radius:50%;
+  background:#222;border:2px solid #555;color:#fff;
+  font-size:18px;cursor:pointer;z-index:650;
+  align-items:center;justify-content:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.5);
+}
+
+/* ─────────────────────────────────────────
+   STATION DOT & POPUP
+───────────────────────────────────────── */
+.sdot{width:13px;height:13px;border-radius:50%;background:#fff;border:3px solid #555;cursor:pointer;transition:transform .12s;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.sdot:hover{transform:scale(1.35)}
+.sdot.xfer{width:17px;height:17px;border:3px solid #fff;box-shadow:0 0 0 2px #555,0 2px 6px rgba(0,0,0,.6)}
+
+.popup{background:#111;border-radius:6px;min-width:200px;max-width:270px;box-shadow:0 4px 20px rgba(0,0,0,.8);overflow:hidden;font-family:var(--font)}
+.pp-head{display:flex;align-items:flex-start;justify-content:space-between;padding:9px 11px 5px;border-bottom:1px solid #222}
+.pp-name{font-size:14px;font-weight:700;color:#fff;flex:1;outline:none;cursor:text;line-height:1.3}
+.pp-name:focus{border-bottom:1px dashed #444}
+.pp-x{color:#555;font-size:17px;cursor:pointer;margin-left:6px;line-height:1;flex-shrink:0}
+.pp-x:hover{color:#fff}
+.pp-sub{font-size:10px;color:#666;padding:3px 11px;border-bottom:1px solid #1a1a1a;line-height:1.5}
+.pp-riders{display:flex;align-items:center;gap:5px;padding:3px 11px;font-size:11px;color:#666;border-bottom:1px solid #1a1a1a}
+.pp-lines{display:flex;gap:3px;padding:5px 11px;flex-wrap:wrap;border-bottom:1px solid #1a1a1a;min-height:38px;align-items:center}
+.plb{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;font-family:var(--font);position:relative}
+.plb-rm{position:absolute;top:-4px;right:-4px;width:11px;height:11px;border-radius:50%;background:#2a2a2a;border:1px solid #555;display:flex;align-items:center;justify-content:center;font-size:8px;color:#f66;cursor:pointer;line-height:1}
+.plb-rm:hover{background:#5a1a1a}
+.pp-add{padding:4px 11px 5px;border-bottom:1px solid #1a1a1a}
+.pp-add-label{font-size:9px;color:#444;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+.pp-add-row{display:flex;gap:3px;flex-wrap:wrap}
+.pmini{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:8px;cursor:pointer;opacity:.65;transition:opacity .1s,transform .1s;font-family:var(--font)}
+.pmini:hover{opacity:1;transform:scale(1.1)}
+.pmini.on{opacity:.2;cursor:default}
+.pp-actions{display:flex;gap:5px;padding:6px 11px}
+.pp-btn{flex:1;padding:5px 0;border:none;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)}
+.pp-btn:hover{opacity:.8}
+.pp-del{background:#2a2a2a;color:#f66}
+
+.leaflet-popup-content-wrapper{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important;border-radius:0!important}
+.leaflet-popup-content{margin:0!important}
+.leaflet-popup-tip-container{display:none!important}
+.leaflet-popup-close-button{display:none!important}
+
+/* ─────────────────────────────────────────
+   MODALS
+───────────────────────────────────────── */
+.modal-ov{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:16px}
+.modal-ov.open{display:flex}
+.modal-box{background:#222;border:1px solid #444;border-radius:8px;padding:20px 24px;max-width:380px;width:100%;color:#ddd;font-family:var(--font)}
+.modal-box h2{color:#fff;margin-bottom:12px;font-size:16px}
+.modal-box p{font-size:11px;line-height:1.6;margin-bottom:6px;color:#999}
+.mbtn{background:#333;border:none;color:#ccc;padding:6px 16px;border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font)}
+.mbtn:hover{background:#3a3a3a}
+
+/* ─────────────────────────────────────────
+   EDIT MODE SWITCHER
+───────────────────────────────────────── */
+#edit-mode-bar{
+  display:flex;gap:0;border:1px solid #3a3a3a;border-radius:5px;overflow:hidden;
+  margin-top:4px;
+}
+.emode-btn{
+  flex:1;padding:5px 4px;border:none;background:#1e1e1e;color:#777;
+  cursor:pointer;font-size:10px;font-weight:600;font-family:var(--font);
+  transition:background .15s,color .15s;text-align:center;line-height:1.3;
+  border-right:1px solid #333;
+}
+.emode-btn:last-child{border-right:none}
+.emode-btn:hover{background:#282828;color:#bbb}
+.emode-btn.active{background:#223a22;color:#8f8;border-bottom:2px solid #4a8}
+.emode-btn#emode-insert.active{background:#2a2a1a;color:#ee8;border-bottom:2px solid #aa6}
+
+/* floating insert-hint that follows cursor on map */
+#insert-hint{
+  position:absolute;
+  background:rgba(10,10,10,.82);color:#cfc;border:1px solid #3a5a3a;
+  padding:3px 10px;border-radius:10px;font-size:10px;
+  z-index:750;pointer-events:none;display:none;
+  white-space:nowrap;font-family:var(--font);
+  transform:translate(14px,-50%);
+}
+
+/* ─────────────────────────────────────────
+   TRAIN MARKERS ON MAP
+───────────────────────────────────────── */
+.train-marker{
+  border-radius:50%;
+  cursor:default;
+  box-shadow:0 0 6px rgba(0,0,0,.6),0 0 10px currentColor;
+  transition:none;
+}
+
+/* ─────────────────────────────────────────
+   MOBILE RESPONSIVE
+───────────────────────────────────────── */
+@media (max-width:640px){
+  :root{--panel-w:100vw}
+  #app{position:relative}
+  #panel{
+    position:absolute;
+    top:0;bottom:0;right:0;
+    width:var(--panel-w);
+    transform:translateX(100%);
+    z-index:800;
+    border-left:none;
+    box-shadow:-4px 0 20px rgba(0,0,0,.6);
+  }
+  #panel.mobile-open{transform:translateX(0)}
+  #mobile-close-btn{display:block}
+  #panel-toggle{display:flex}
+  #map-prov-bar{top:8px;right:8px}
+  #mode-bar span:last-child{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- MAP -->
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div id="mode-bar">
+      <span id="mode-label">Select a line, then click the map to add stations</span>
+      <span>ESC = deselect • drag = move station</span>
+    </div>
+    <div id="toast"></div>
+    <div id="insert-hint"></div>
+    <div id="map-prov-bar">
+      <select id="map-prov-sel">
+        <option value="carto-light">CartoDB Light</option>
+        <option value="osm">OpenStreetMap</option>
+        <option value="carto-dark">CartoDB Dark</option>
+        <option value="esri">Esri Satellite</option>
+        <option value="yandex-map">Яндекс Карта</option>
+        <option value="yandex-sat">Яндекс Спутник</option>
+        <option value="yandex-hybrid">Яндекс Гибрид</option>
+      </select>
+    </div>
+    <!-- Mobile open panel button -->
+    <button id="panel-toggle" onclick="toggleMobilePanel()">☰</button>
+  </div>
+
+  <!-- PANEL -->
+  <div id="panel">
+    <div id="panel-header">
+      <h1>Brand New Subway</h1>
+      <button id="mobile-close-btn" onclick="toggleMobilePanel()">✕</button>
+    </div>
+
+    <div id="panel-scroll">
+
+      <!-- PRESETS -->
+      <div class="p-section">
+        <div class="p-title">Load Map</div>
+        <button class="start-btn" onclick="startScratch()">✦ Start from scratch</button>
+        <button class="start-btn" onclick="loadPreset('nyc2024')">2024 Present-Day Map</button>
+        <button class="start-btn" onclick="loadPreset('vignelli')">1972 Vignelli Map</button>
+        <button class="start-btn" onclick="loadPreset('nyc1967')">1967 Historical Map</button>
+      </div>
+
+      <!-- LINES GRID -->
+      <div id="lines-section">
+        <div class="lines-row" id="row-ace"></div>
+        <div class="lines-row" id="row-bdfm"></div>
+        <div class="lines-row" id="row-gjzl"></div>
+        <div class="lines-row" id="row-nqrw"></div>
+        <div class="lines-row" id="row-s123"></div>
+        <div class="lines-row" id="row-4567"></div>
+        <div id="extra-lines-wrap">
+          <div style="font-size:9px;color:#444;text-transform:uppercase;letter-spacing:1px;margin:4px 0 3px">Additional Lines</div>
+          <div id="extra-lines-row" class="lines-row"></div>
+        </div>
+        <button class="expand-btn" id="toggle-extra-btn" onclick="toggleExtra()">Show Additional Lines</button>
+        <button class="expand-btn" id="add-custom-btn" onclick="toggleCustomForm()">+ Add Custom Line</button>
+        <div id="custom-line-form">
+          <div class="ff"><label>Label (1–4 chars)</label><input type="text" id="cl-name" placeholder="e.g. X" maxlength="4"/></div>
+          <div class="ff"><div class="cpair">
+            <div class="cpick"><label>Background</label><input type="color" id="cl-bg" value="#888"/></div>
+            <div class="cpick"><label>Text</label><input type="color" id="cl-fg" value="#ffffff"/></div>
+          </div></div>
+          <div class="fa-row">
+            <button class="fb fb-ok" onclick="addCustomLine()">Add Line</button>
+            <button class="fb fb-cancel" onclick="toggleCustomForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVE LINE CONTROLS -->
+      <div id="controls-bar">
+        <div id="ali">
+          <div id="ali-dot"></div>
+          <div id="ali-label">—</div>
+          <div class="ali-btns">
+            <button class="ali-btn" onclick="openEditLine()" title="Edit line">✎ Edit</button>
+            <button class="ali-btn danger" onclick="deleteActiveLine()" title="Delete line">✕</button>
+          </div>
+        </div>
+        <!-- Edit mode: Append vs Smart Insert -->
+        <div id="edit-mode-bar">
+          <button class="emode-btn active" id="emode-append" onclick="setEditMode('append')" title="New stations added to end of line">
+            &#x271A; Append <span style="font-size:8px;font-weight:400">(to end)</span>
+          </button>
+          <button class="emode-btn" id="emode-insert" onclick="setEditMode('insert')" title="Click near a segment to insert station at closest point">
+            &#x2295; Insert <span style="font-size:8px;font-weight:400">(smart)</span>
+          </button>
+        </div>
+        <div class="ctrl-row" style="margin-top:4px">
+          <span class="ctrl-lbl">⟳ Circular / loop</span>
+          <label class="sw"><input type="checkbox" id="circ-chk" onchange="toggleCircular(this.checked)"/><div class="sw-track"></div></label>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-lbl">〜 Smooth curves</span>
+          <label class="sw"><input type="checkbox" id="smooth-chk" onchange="toggleSmooth(this.checked)"/><div class="sw-track"></div></label>
+        </div>
+      </div>
+
+      <!-- ROUTE DIAGRAM + TRAINS -->
+      <div id="route-section">
+        <div id="route-header" onclick="toggleRouteDiagram()">
+          <span id="rti">▶</span>&nbsp; Route Diagram
+        </div>
+        <div id="route-body">
+          <div id="route-content"><div class="no-msg">Select a line to see its route.</div></div>
+
+          <!-- TRAINS -->
+          <div id="train-section" style="display:none">
+            <div class="train-section-title">🚇 Trains on this line</div>
+            <div id="train-list"></div>
+            <button id="new-train-btn" onclick="toggleNewTrainForm()">+ New Train</button>
+            <div id="new-train-form" class="train-form" style="margin-top:5px">
+              <div class="ff"><label>Model name</label><input type="text" id="nt-model" placeholder="e.g. R160A"/></div>
+              <div class="ff"><label>Total cars available</label><input type="number" id="nt-total" min="1" max="9999" value="60" placeholder="60"/></div>
+              <div class="ff"><label>Cars per train set</label><input type="number" id="nt-per" min="1" max="20" value="10" placeholder="10"/></div>
+              <div style="font-size:10px;color:#666;margin-bottom:5px" id="nt-count-preview">→ 6 train sets</div>
+              <div class="fa-row">
+                <button class="fb fb-ok" onclick="addTrain()">Add</button>
+                <button class="fb fb-cancel" onclick="toggleNewTrainForm()">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="settings-section">
+        <div class="stitle">Appearance</div>
+        <div class="srow">
+          <span class="slabel">Font</span>
+          <select class="sselect" id="font-select" onchange="changeFont(this.value)">
+            <option value="'Helvetica Neue',Helvetica,Arial,sans-serif">Helvetica</option>
+            <option value="'Moscow Sans',sans-serif">Moscow Sans</option>
+            <option value="'Roboto',sans-serif">Roboto</option>
+            <option value="'Montserrat',sans-serif">Montserrat</option>
+            <option value="'Oswald',sans-serif">Oswald</option>
+            <option value="'Nunito',sans-serif">Nunito</option>
+            <option value="'Playfair Display',serif">Playfair Display</option>
+            <option value="'Bebas Neue',sans-serif">Bebas Neue</option>
+            <option value="'Source Code Pro',monospace">Source Code Pro</option>
+          </select>
+        </div>
+        <div class="srow">
+          <span class="slabel">Map tiles</span>
+          <select class="sselect" id="map-prov-sel2">
+            <option value="carto-light">CartoDB Light</option>
+            <option value="osm">OpenStreetMap</option>
+            <option value="carto-dark">CartoDB Dark</option>
+            <option value="esri">Esri Satellite</option>
+            <option value="yandex-map">Яндекс Карта</option>
+            <option value="yandex-sat">Яндекс Спутник</option>
+            <option value="yandex-hybrid">Яндекс Гибрид</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div id="stats-section">
+        <div class="stat-row"><div class="stat-icon">💳</div><div><div class="stat-value">$2.90</div><div class="stat-label">Single-ride fare</div></div></div>
+        <div class="stat-row"><div class="stat-icon">🧍</div><div><div class="stat-value" id="stat-riders">—</div><div class="stat-label">Avg weekday ridership</div></div></div>
+        <div class="stat-row"><div class="stat-icon">🚇</div><div><div class="stat-value" id="stat-trains">0</div><div class="stat-label">Active trains</div></div></div>
+        <div class="stat-row"><div class="stat-icon">⭐</div><div><div class="stat-value" id="stat-rating">—</div><div class="stat-label">System rating</div></div></div>
+      </div>
+
+    </div><!-- /panel-scroll -->
+
+    <div id="bottom-btns">
+      <button class="bottom-btn primary" onclick="saveToFile()">💾 Save</button>
+      <button class="bottom-btn" onclick="loadFromFile()">📂 Load</button>
+      <button class="bottom-btn" onclick="openAbout()">?</button>
+    </div>
+    <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFileLoad(event)"/>
+  </div>
+</div>
+
+<!-- ABOUT MODAL -->
+<div id="about-modal" class="modal-ov">
+  <div class="modal-box">
+    <h2>Brand New Subway</h2>
+    <p>Design your ideal transit network. Select a line → click map to add stations → drag to move.</p>
+    <p><b>Multi-line stations:</b> Click station → tap badge row to add/remove lines.</p>
+    <p><b>Trains:</b> Select a line → open Route Diagram → click "New Train". Trains animate along the route.</p>
+    <p><b>Save/Load:</b> JSON files saved to your computer.</p>
+    <button class="mbtn" onclick="closeAbout()">Close</button>
+  </div>
+</div>
+
+<!-- EDIT LINE MODAL -->
+<div id="edit-line-modal" class="modal-ov">
+  <div class="modal-box">
+    <h2>Edit Line</h2>
+    <div class="ff"><label>Label (1–4 chars)</label><input type="text" id="el-label" maxlength="4"/></div>
+    <div class="ff"><label>Title / Description</label><input type="text" id="el-title"/></div>
+    <div class="ff"><div class="cpair">
+      <div class="cpick"><label>Background</label><input type="color" id="el-bg"/></div>
+      <div class="cpick"><label>Text color</label><input type="color" id="el-fg"/></div>
+    </div></div>
+    <div class="fa-row">
+      <button class="fb fb-ok" onclick="saveEditLine()">Save</button>
+      <button class="fb fb-cancel" onclick="closeEditLine()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// PALETTE
+// ═══════════════════════════════════════════════════════════
+const C={
+  BLUE:'#2850AD',ORANGE:'#FF6319',GREEN:'#6CBE45',BROWN:'#996633',
+  GREY:'#A7A9AC',YELLOW:'#FCCC0A',SGREY:'#808183',RED:'#EE352E',
+  DGREEN:'#00933C',PURPLE:'#B933AD',LTBLUE:'#00A1DE',
+  TEAL:'#00838A',MAROON:'#8B0000',NAVY:'#003580',
+};
+
+// ═══════════════════════════════════════════════════════════
+// LINE DEFINITIONS
+// ═══════════════════════════════════════════════════════════
+const NYC_LINES=[
+  {id:'A', label:'A', bg:C.BLUE,   fg:'#fff',row:'ace', title:'A Train – 8th Ave Express'},
+  {id:'C', label:'C', bg:C.BLUE,   fg:'#fff',row:'ace', title:'C Train – 8th Ave Local'},
+  {id:'E', label:'E', bg:C.BLUE,   fg:'#fff',row:'ace', title:'E Train – Queens–8th Ave'},
+  {id:'H', label:'H', bg:C.BLUE,   fg:'#fff',row:'ace', title:'H – Rockaway Shuttle'},
+  {id:'K', label:'K', bg:C.BLUE,   fg:'#fff',row:'ace', title:'K – Proposed'},
+  {id:'B', label:'B', bg:C.ORANGE, fg:'#fff',row:'bdfm',title:'B Train – 6th Ave Express'},
+  {id:'D', label:'D', bg:C.ORANGE, fg:'#fff',row:'bdfm',title:'D Train – 6th Ave Express'},
+  {id:'F', label:'F', bg:C.ORANGE, fg:'#fff',row:'bdfm',title:'F Train – 6th Ave Local'},
+  {id:'M', label:'M', bg:C.ORANGE, fg:'#fff',row:'bdfm',title:'M Train – 6th Ave Local'},
+  {id:'V', label:'V', bg:C.ORANGE, fg:'#fff',row:'bdfm',title:'V Train – 6th Ave (2001–2010)'},
+  {id:'G', label:'G', bg:C.GREEN,  fg:'#fff',row:'gjzl',title:'G Train – Crosstown Local'},
+  {id:'J', label:'J', bg:C.BROWN,  fg:'#fff',row:'gjzl',title:'J Train – Nassau St Local'},
+  {id:'Z', label:'Z', bg:C.BROWN,  fg:'#fff',row:'gjzl',title:'Z Train – Nassau St Express'},
+  {id:'L', label:'L', bg:C.GREY,   fg:'#fff',row:'gjzl',title:'L Train – 14th St–Canarsie'},
+  {id:'N', label:'N', bg:C.YELLOW, fg:'#000',row:'nqrw',title:'N Train – Broadway Express'},
+  {id:'Q', label:'Q', bg:C.YELLOW, fg:'#000',row:'nqrw',title:'Q Train – Broadway Express'},
+  {id:'R', label:'R', bg:C.YELLOW, fg:'#000',row:'nqrw',title:'R Train – Broadway Local'},
+  {id:'W', label:'W', bg:C.YELLOW, fg:'#000',row:'nqrw',title:'W Train – Whitehall–Astoria'},
+  {id:'S1',label:'S', bg:C.SGREY,  fg:'#fff',row:'s123',title:'S – 42nd St Shuttle'},
+  {id:'S2',label:'S', bg:C.SGREY,  fg:'#fff',row:'s123',title:'S – Franklin Av Shuttle',dimmed:true},
+  {id:'S3',label:'S', bg:C.SGREY,  fg:'#fff',row:'s123',title:'S – Rockaway Pk Shuttle', dimmed:true},
+  {id:'1', label:'1', bg:C.RED,    fg:'#fff',row:'s123',title:'1 Train – 7th Ave Local'},
+  {id:'2', label:'2', bg:C.RED,    fg:'#fff',row:'s123',title:'2 Train – 7th Ave Express'},
+  {id:'3', label:'3', bg:C.RED,    fg:'#fff',row:'s123',title:'3 Train – 7th Ave Express'},
+  {id:'4', label:'4', bg:C.DGREEN, fg:'#fff',row:'4567',title:'4 Train – Lex Ave Express'},
+  {id:'5', label:'5', bg:C.DGREEN, fg:'#fff',row:'4567',title:'5 Train – Lex Ave Express'},
+  {id:'6', label:'6', bg:C.DGREEN, fg:'#fff',row:'4567',title:'6 Train – Lex Ave Local'},
+  {id:'7', label:'7', bg:C.PURPLE, fg:'#fff',row:'4567',title:'7 Train – Flushing'},
+  {id:'SI',label:'SI',bg:C.BLUE,   fg:'#fff',row:'4567',title:'Staten Island Railway'},
+  {id:'JFK',label:'✈',bg:C.YELLOW,fg:'#000',row:'4567',title:'JFK AirTrain'},
+];
+
+// Extra lines — 8,10,12 = DGREEN (like 4,5,6); 9,13 = RED (like 1,2,3); 11 = PURPLE (like 7)
+const EXTRA_LINES=[
+  {id:'T',  label:'T',  bg:C.LTBLUE,fg:'#fff',title:'T – 2nd Ave Subway'},
+  {id:'BQX',label:'BQX',bg:'#556',  fg:'#fff',title:'BQX – Brooklyn–Queens Connector'},
+  {id:'Tb', label:'Tb', bg:C.YELLOW,fg:'#000',title:'TriboroRX'},
+  {id:'MJ', label:'MJ', bg:C.PURPLE,fg:'#fff',title:'Metro-Jamaica'},
+  {id:'8',  label:'8',  bg:C.DGREEN,fg:'#fff',title:'8 – Proposed (Lex group)'},
+  {id:'9',  label:'9',  bg:C.RED,   fg:'#fff',title:'9 – 7th Ave Skip-Stop (disc. 2005)'},
+  {id:'10', label:'10', bg:C.DGREEN,fg:'#fff',title:'10 – Triboro / Proposed'},
+  {id:'11', label:'11', bg:C.PURPLE,fg:'#fff',title:'11 – Proposed (Flushing group)'},
+  {id:'12', label:'12', bg:C.DGREEN,fg:'#fff',title:'12 – IND 2nd System (hist.)'},
+  {id:'13', label:'13', bg:C.RED,   fg:'#fff',title:'13 – Proposed'},
+];
+
+const MAP_PROVIDERS={
+  'carto-light':{url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',opts:{attribution:'© OSM © CARTO',subdomains:'abcd',maxZoom:19}},
+  'osm':        {url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',            opts:{attribution:'© OpenStreetMap',maxZoom:19}},
+  'carto-dark': {url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', opts:{attribution:'© OSM © CARTO',subdomains:'abcd',maxZoom:19}},
+  'esri':       {url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',opts:{attribution:'© Esri',maxZoom:18}},
+  'yandex-map': {url:'https://core-renderer-tiles.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&scale=1&lang=ru_RU',opts:{attribution:'© Яндекс',maxZoom:19}},
+  'yandex-sat': {url:'https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&scale=1&lang=ru_RU',          opts:{attribution:'© Яндекс',maxZoom:19}},
+  'yandex-hybrid':{hybrid:true,layers:[
+    {url:'https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&scale=1&lang=ru_RU'},
+    {url:'https://core-renderer-tiles.maps.yandex.net/tiles?l=skl&x={x}&y={y}&z={z}&scale=1&lang=ru_RU'},
+  ],opts:{attribution:'© Яндекс',maxZoom:19}},
+};
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let map,currentTile=null,hybridLayers=[];
+let activeLineId=null;
+let lines={};    // id → {id,label,bg,fg,title,stations:[],circular,smooth,polylines:[],custom,trains:[]}
+let stations={};  // id → {id,latlng,name,borough,ridership,lineIds:[],marker}
+let extraVisible=false;
+let routeOpen=false;
+let dragState=null;
+let editMode="append"; // "append" | "insert"
+let insertPreviewLine=null;
+let hoverInsertInfo=null; // {lineId, insertAfterIndex}
+// Trains: {id, lineId, model, totalCars, carsPerSet, count, running, markers:[], progress:[], direction:[]}
+let trainAnimFrame=null;
+
+const genId=()=>'_'+Math.random().toString(36).substr(2,9);
+
+// ═══════════════════════════════════════════════════════════
+// MAP INIT
+// ═══════════════════════════════════════════════════════════
+function initMap(){
+  map=L.map('map',{center:[40.728,-73.944],zoom:12,zoomControl:true});
+  switchTiles('carto-light');
+  map.on('click',onMapClick);
+  map.on('mousemove',onMouseMove);
+  map.on('mouseup',onMouseUp);
+  map.on('mouseout',onMapMouseOut);
+
+  const s1=document.getElementById('map-prov-sel');
+  const s2=document.getElementById('map-prov-sel2');
+  function ch(v){switchTiles(v);s1.value=v;s2.value=v;}
+  s1.addEventListener('change',e=>ch(e.target.value));
+  s2.addEventListener('change',e=>ch(e.target.value));
+}
+
+function switchTiles(key){
+  if(currentTile){map.removeLayer(currentTile);currentTile=null;}
+  hybridLayers.forEach(l=>map.removeLayer(l));hybridLayers=[];
+  const p=MAP_PROVIDERS[key];if(!p)return;
+  if(p.hybrid){p.layers.forEach(lc=>{const t=L.tileLayer(lc.url,p.opts);t.addTo(map);hybridLayers.push(t);});}
+  else{currentTile=L.tileLayer(p.url,p.opts);currentTile.addTo(map);}
+}
+
+// ═══════════════════════════════════════════════════════════
+// FONT
+// ═══════════════════════════════════════════════════════════
+function changeFont(v){
+  document.documentElement.style.setProperty('--font',v);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MOBILE PANEL
+// ═══════════════════════════════════════════════════════════
+function toggleMobilePanel(){
+  document.getElementById('panel').classList.toggle('mobile-open');
+}
+
+// ═══════════════════════════════════════════════════════════
+// ENSURE LINE DATA
+// ═══════════════════════════════════════════════════════════
+function ensureLine(def){
+  if(!lines[def.id])
+    lines[def.id]={...def,stations:[],circular:false,smooth:false,polylines:[],custom:false,trains:[]};
+}
+
+// ═══════════════════════════════════════════════════════════
+// BUILD PANEL
+// ═══════════════════════════════════════════════════════════
+function buildLinesPanel(){
+  const ROWS={ace:'row-ace',bdfm:'row-bdfm',gjzl:'row-gjzl',nqrw:'row-nqrw',s123:'row-s123','4567':'row-4567'};
+  Object.values(ROWS).forEach(id=>document.getElementById(id).innerHTML='');
+  document.getElementById('extra-lines-row').innerHTML='';
+
+  NYC_LINES.forEach(def=>{ensureLine(def);const r=document.getElementById(ROWS[def.row]);if(r)r.appendChild(makeBtn(def));});
+  EXTRA_LINES.forEach(def=>{ensureLine(def);document.getElementById('extra-lines-row').appendChild(makeBtn(def));});
+  Object.values(lines).filter(l=>l.custom).forEach(def=>document.getElementById('extra-lines-row').appendChild(makeBtn(def)));
+  updateControlsBar();
+  updateStatTrains();
+}
+
+function makeBtn(def){
+  const line=lines[def.id]||def;
+  const hasTrains=line.trains&&line.trains.some(t=>t.running);
+  const btn=document.createElement('div');
+  btn.className='line-btn'+(def.disabled?' disabled':'')+(activeLineId===def.id?' active':'')+(hasTrains?' has-trains':'');
+  btn.style.background=line.bg||def.bg;
+  btn.style.color=line.fg||def.fg;
+  if(def.dimmed)btn.style.opacity='0.65';
+  btn.textContent=line.label||def.label;
+  btn.title=line.title||def.title||def.label;
+  // train indicator dot
+  const dot=document.createElement('div');dot.className='train-dot';btn.appendChild(dot);
+  if(!def.disabled)btn.addEventListener('click',()=>selectLine(def.id));
+  return btn;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SELECT / DESELECT
+// ═══════════════════════════════════════════════════════════
+function selectLine(id){
+  clearInsertPreview();
+  activeLineId=id;
+  buildLinesPanel();
+  updateControlsBar();
+  updateRouteDiagram();
+  updateModeLabel();
+}
+function deselectLine(){
+  clearInsertPreview();
+  activeLineId=null;
+  buildLinesPanel();
+  updateControlsBar();
+  updateRouteDiagram();
+  updateModeLabel();
+}
+
+function updateControlsBar(){
+  const bar=document.getElementById('controls-bar');
+  if(!activeLineId){bar.classList.remove('visible');return;}
+  bar.classList.add('visible');
+  const l=lines[activeLineId];
+  document.getElementById('ali-dot').style.background=l.bg;
+  document.getElementById('ali-label').textContent=l.title||l.label;
+  document.getElementById('circ-chk').checked=l.circular||false;
+  document.getElementById('smooth-chk').checked=l.smooth||false;
+}
+
+function toggleCircular(v){if(!activeLineId)return;lines[activeLineId].circular=v;redrawLine(lines[activeLineId]);updateRouteDiagram();}
+function toggleSmooth(v){if(!activeLineId)return;lines[activeLineId].smooth=v;redrawLine(lines[activeLineId]);}
+
+// ═══════════════════════════════════════════════════════════
+// EDIT / DELETE LINE
+// ═══════════════════════════════════════════════════════════
+function openEditLine(){
+  if(!activeLineId)return;
+  const l=lines[activeLineId];
+  document.getElementById('el-label').value=l.label;
+  document.getElementById('el-title').value=l.title||'';
+  document.getElementById('el-bg').value=l.bg;
+  document.getElementById('el-fg').value=l.fg;
+  document.getElementById('edit-line-modal').classList.add('open');
+}
+function closeEditLine(){document.getElementById('edit-line-modal').classList.remove('open');}
+function saveEditLine(){
+  if(!activeLineId)return;
+  const l=lines[activeLineId];
+  const newLabel=document.getElementById('el-label').value.trim()||l.label;
+  const newTitle=document.getElementById('el-title').value.trim();
+  const newBg=document.getElementById('el-bg').value;
+  const newFg=document.getElementById('el-fg').value;
+  l.label=newLabel;l.title=newTitle;l.bg=newBg;l.fg=newFg;
+  l.stations.forEach(sid=>{const st=stations[sid];if(st)refreshMarker(st);});
+  redrawLine(l);
+  buildLinesPanel();updateControlsBar();closeEditLine();
+  showToast('Line updated!');
+}
+
+function deleteActiveLine(){
+  if(!activeLineId)return;
+  const l=lines[activeLineId];
+  if(!confirm('Delete line "'+l.label+'"?'))return;
+  stopAllTrainsOnLine(activeLineId);
+  l.stations.forEach(sid=>{
+    const st=stations[sid];if(!st)return;
+    st.lineIds=st.lineIds.filter(lid=>lid!==activeLineId);
+    if(st.lineIds.length===0){if(st.marker)map.removeLayer(st.marker);delete stations[sid];}
+    else refreshMarker(st);
+  });
+  l.polylines.forEach(p=>map.removeLayer(p));
+  delete lines[activeLineId];
+  activeLineId=null;
+  buildLinesPanel();updateRouteDiagram();updateModeLabel();updateStats();
+  showToast('Line deleted.');
+}
+
+// ═══════════════════════════════════════════════════════════
+// EDIT MODE
+// ═══════════════════════════════════════════════════════════
+function setEditMode(mode){
+  editMode=mode;
+  document.getElementById('emode-append').classList.toggle('active', mode==='append');
+  document.getElementById('emode-insert').classList.toggle('active', mode==='insert');
+  clearInsertPreview();
+  updateModeLabel();
+}
+
+// ─── Geometry helpers ────────────────────────────────────────
+// Project point P onto segment AB, return {t, point:[lat,lng], dist}
+function projectOnSegment(A, B, P){
+  const ax=A[1],ay=A[0],bx=B[1],by=B[0],px=P[1],py=P[0];
+  const dx=bx-ax, dy=by-ay;
+  const lenSq=dx*dx+dy*dy;
+  let t = lenSq===0 ? 0 : ((px-ax)*dx+(py-ay)*dy)/lenSq;
+  t=Math.max(0,Math.min(1,t));
+  const qx=ax+t*dx, qy=ay+t*dy;
+  const d=Math.sqrt((px-qx)*(px-qx)+(py-qy)*(py-qy));
+  return {t, point:[qy,qx], dist:d};
+}
+
+// ── Leaflet-based distance in metres between two latlng arrays ──
+function mDist(a, b){
+  return L.latLng(a).distanceTo(L.latLng(b));
+}
+
+// Project point P onto segment AB using real metric distances.
+// Returns {t, dist_m} where dist_m is perpendicular distance in metres.
+function projectOnSegmentM(A, B, P){
+  // Convert to flat pixel-space via Leaflet CRS for correct projection
+  const crs = L.CRS.EPSG3857;
+  const zA = crs.latLngToPoint(L.latLng(A), 13);
+  const zB = crs.latLngToPoint(L.latLng(B), 13);
+  const zP = crs.latLngToPoint(L.latLng(P), 13);
+  const dx=zB.x-zA.x, dy=zB.y-zA.y;
+  const lenSq=dx*dx+dy*dy;
+  let t = lenSq===0 ? 0 : ((zP.x-zA.x)*dx+(zP.y-zA.y)*dy)/lenSq;
+  t=Math.max(0,Math.min(1,t));
+  const qx=zA.x+t*dx, qy=zA.y+t*dy;
+  const qLL = crs.pointToLatLng({x:qx, y:qy}, 13);
+  const dist_m = L.latLng(P).distanceTo(qLL);
+  return {t, dist_m, projLL: qLL};
+}
+
+// Find which segment (or end) of line is closest to latlng.
+// Returns {insertAfterIndex}:
+//   -1  → prepend before station[0]
+//   i   → insert between station[i] and station[i+1]
+//   sids.length-1 → append after last station
+function findClosestSegment(line, latlng){
+  const sids=line.stations;
+  if(sids.length===0) return {insertAfterIndex: -1};
+  if(sids.length===1) return {insertAfterIndex: 0};
+
+  const P=[latlng.lat, latlng.lng];
+
+  // ── Step 1: find closest segment (perpendicular projection, clamped to endpoints) ──
+  const segCount = line.circular ? sids.length : sids.length-1;
+  let bestSegDist=Infinity, bestSegIdx=0, bestT=0;
+
+  for(let i=0;i<segCount;i++){
+    const a=stations[sids[i]];
+    const b=stations[sids[(i+1)%sids.length]];
+    if(!a||!b) continue;
+    const res=projectOnSegmentM(a.latlng, b.latlng, P);
+    if(res.dist_m < bestSegDist){
+      bestSegDist=res.dist_m;
+      bestSegIdx=i;
+      bestT=res.t;
+    }
+  }
+
+  // ── Step 2 (non-circular only): check if click is "outside" the line endpoints ──
+  // If the best projection hit an endpoint (t≈0 or t≈1 on the end segments),
+  // compare real distance to the endpoint vs. to the next interior segment.
+  // This ensures clicks beyond the first or last station extend the line outward.
+  if(!line.circular){
+    const first=stations[sids[0]];
+    const last=stations[sids[sids.length-1]];
+    if(first && last){
+      const dFirst = mDist(P, first.latlng);
+      const dLast  = mDist(P, last.latlng);
+
+      // Build a "beyond-endpoint" score: how much the click extends past the end
+      // We compare dist-to-endpoint against the best segment dist.
+      // If the nearest segment endpoint IS the first or last station (t≈0 on first seg
+      // or t≈1 on last seg), the point is "outside" the line.
+      const onFirstSeg = bestSegIdx===0 && bestT < 0.15;
+      const onLastSeg  = bestSegIdx===sids.length-2 && bestT > 0.85;
+
+      if(onFirstSeg || onLastSeg){
+        // Pick whichever end is closer
+        if(dFirst <= dLast){
+          // Prepend
+          return {insertAfterIndex: -1};
+        } else {
+          // Append after last
+          return {insertAfterIndex: sids.length-1};
+        }
+      }
+
+      // Even if not on an end segment, if the click is closer to an endpoint
+      // than to any segment midpoint, snap to that end.
+      const endThreshold = bestSegDist * 0.7; // 70% of best segment dist
+      if(dFirst < endThreshold && dFirst <= dLast){
+        return {insertAfterIndex: -1};
+      }
+      if(dLast < endThreshold && dLast < dFirst){
+        return {insertAfterIndex: sids.length-1};
+      }
+    }
+  }
+
+  return {insertAfterIndex: bestSegIdx};
+}
+
+function clearInsertPreview(){
+  if(insertPreviewLine){map.removeLayer(insertPreviewLine);insertPreviewLine=null;}
+  hoverInsertInfo=null;
+  const hint=document.getElementById('insert-hint');
+  if(hint) hint.style.display='none';
+}
+
+// ─── MAP CLICK → ADD STATION ─────────────────────────────────
+function onMapClick(e){
+  if(!activeLineId)return;
+  if(dragState&&dragState.moved){dragState=null;return;}
+  const line=lines[activeLineId];if(!line)return;
+
+  const latlng=[e.latlng.lat,e.latlng.lng];
+  const sid=genId();
+  const totalOnLine=line.stations.length;
+  const st={
+    id:sid, latlng,
+    name:'Station '+(Object.keys(stations).length+1),
+    borough:boroughOf(e.latlng),
+    ridership:Math.floor(Math.random()*7000)+600,
+    lineIds:[activeLineId], marker:null
+  };
+  stations[sid]=st;
+
+  if(editMode==='append' || totalOnLine<2){
+    // Always append: push to end
+    line.stations.push(sid);
+  } else {
+    // Smart Insert: find closest segment or endpoint
+    const {insertAfterIndex} = findClosestSegment(line, e.latlng);
+    if(insertAfterIndex===-1){
+      // Prepend before first station
+      line.stations.unshift(sid);
+    } else if(insertAfterIndex >= line.stations.length-1){
+      // Append after last station
+      line.stations.push(sid);
+    } else {
+      // Insert after insertAfterIndex (between two existing stations)
+      line.stations.splice(insertAfterIndex+1, 0, sid);
+    }
+  }
+
+  clearInsertPreview();
+  createMarker(st);
+  redrawLine(line);
+  updateRouteDiagram();
+  updateStats();
+}
+
+function boroughOf(ll){
+  if(ll.lat>40.796&&ll.lng>-73.93)return 'The Bronx';
+  if(ll.lat>40.700&&ll.lng>-73.85)return 'Queens';
+  if(ll.lat<40.650)return 'Brooklyn';
+  if(ll.lng<-74.04)return 'Staten Island';
+  return 'Manhattan';
+}
+
+// ═══════════════════════════════════════════════════════════
+// MARKERS
+// ═══════════════════════════════════════════════════════════
+function createMarker(st){
+  const el=document.createElement('div');el.className='sdot';styleMarkerEl(el,st);
+  const icon=L.divIcon({html:el,className:'',iconSize:[13,13],iconAnchor:[6,6]});
+  const m=L.marker(st.latlng,{icon,draggable:false,zIndexOffset:200});
+  m.on('click',ev=>{L.DomEvent.stopPropagation(ev);if(dragState&&dragState.moved)return;openPopup(st.id);});
+  m.on('mousedown',ev=>{L.DomEvent.stopPropagation(ev);dragState={sid:st.id,moved:false};map.dragging.disable();});
+  m.addTo(map);st.marker=m;
+}
+function styleMarkerEl(el,st){
+  if(st.lineIds.length>1){el.classList.add('xfer');el.style.borderColor='#fff';}
+  else{el.classList.remove('xfer');const fl=lines[st.lineIds[0]];el.style.borderColor=fl?fl.bg:'#888';}
+}
+function refreshMarker(st){
+  if(!st.marker)return;
+  const el=st.marker.getElement();if(!el)return;
+  const d=el.querySelector('.sdot');if(d)styleMarkerEl(d,st);
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRAG + INSERT HOVER PREVIEW
+// ═══════════════════════════════════════════════════════════
+function onMouseMove(e){
+  // Dragging a station
+  if(dragState){
+    dragState.moved=true;
+    const st=stations[dragState.sid];if(!st)return;
+    st.latlng=[e.latlng.lat,e.latlng.lng];
+    st.marker.setLatLng(e.latlng);
+    st.lineIds.forEach(lid=>{if(lines[lid])redrawLine(lines[lid]);});
+    return;
+  }
+
+  // Insert mode preview
+  if(editMode!=='insert'||!activeLineId) return;
+  const line=lines[activeLineId];
+  if(!line||line.stations.length<2) return;
+
+  const {insertAfterIndex} = findClosestSegment(line, e.latlng);
+  hoverInsertInfo={insertAfterIndex};
+
+  // Draw dashed preview segments showing where station will be inserted
+  if(insertPreviewLine){map.removeLayer(insertPreviewLine);insertPreviewLine=null;}
+
+  const sids=line.stations;
+  const lastIdx=sids.length-1;
+  let prevSid=null, nextSid=null, hintText='';
+
+  if(insertAfterIndex===-1){
+    // Will prepend -> link from click to first station
+    nextSid=sids[0];
+    hintText='Add before: '+(stations[nextSid]?stations[nextSid].name:'first station');
+  } else if(insertAfterIndex>=lastIdx){
+    // Will append -> link from last station to click
+    prevSid=sids[lastIdx];
+    hintText='Add after: '+(stations[prevSid]?stations[prevSid].name:'last station');
+  } else {
+    // Will insert between two existing stations
+    prevSid=sids[insertAfterIndex];
+    nextSid=sids[insertAfterIndex+1];
+    const aName=stations[prevSid]?stations[prevSid].name:'?';
+    const bName=stations[nextSid]?stations[nextSid].name:'?';
+    hintText='Insert: '+aName+' → ● → '+bName;
+  }
+
+  const pts=[];
+  if(prevSid&&stations[prevSid]) pts.push(stations[prevSid].latlng);
+  pts.push([e.latlng.lat, e.latlng.lng]);
+  if(nextSid&&stations[nextSid]) pts.push(stations[nextSid].latlng);
+
+  if(pts.length>=2){
+    insertPreviewLine=L.polyline(pts,{
+      color:line.bg, weight:4, opacity:0.65,
+      dashArray:'7 5', lineJoin:'round', lineCap:'round'
+    });
+    insertPreviewLine.addTo(map);
+  }
+
+  // Floating hint near cursor
+  const hint=document.getElementById('insert-hint');
+  if(hint){
+    const containerPt=map.latLngToContainerPoint(e.latlng);
+    hint.style.display='block';
+    hint.style.left=containerPt.x+'px';
+    hint.style.top=containerPt.y+'px';
+    hint.textContent=hintText;
+  }
+}
+
+function onMouseUp(){
+  if(dragState){setTimeout(()=>{dragState=null;},60);map.dragging.enable();}
+}
+
+// Clear insert preview when leaving map
+function onMapMouseOut(){
+  if(editMode==='insert') clearInsertPreview();
+}
+
+// ═══════════════════════════════════════════════════════════
+// POPUP — multi-line
+// ═══════════════════════════════════════════════════════════
+function openPopup(sid){
+  const st=stations[sid];if(!st)return;
+  map.closePopup();
+  const wrap=document.createElement('div');wrap.className='popup';
+
+  const head=document.createElement('div');head.className='pp-head';
+  const nameEl=document.createElement('div');nameEl.className='pp-name';
+  nameEl.contentEditable='true';nameEl.textContent=st.name;
+  nameEl.addEventListener('blur',()=>{st.name=nameEl.textContent.trim()||st.name;nameEl.textContent=st.name;updateRouteDiagram();});
+  nameEl.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();nameEl.blur();}});
+  const px=document.createElement('div');px.className='pp-x';px.innerHTML='&times;';
+  px.addEventListener('click',()=>map.closePopup());
+  head.append(nameEl,px);
+
+  const sub=document.createElement('div');sub.className='pp-sub';
+  sub.innerHTML=st.borough+(st.lineIds.length>1?' &nbsp;·&nbsp; <span style="color:#4a8">Transfer</span>':'');
+
+  const rid=document.createElement('div');rid.className='pp-riders';
+  rid.innerHTML='🧍 '+st.ridership.toLocaleString();
+
+  const linesRow=document.createElement('div');linesRow.className='pp-lines';
+  function rebuildBadges(){
+    linesRow.innerHTML='';
+    st.lineIds.forEach(lid=>{
+      const l=lines[lid];if(!l)return;
+      const wrap2=document.createElement('div');wrap2.className='plb';
+      wrap2.style.background=l.bg;wrap2.style.color=l.fg;wrap2.textContent=l.label;
+      wrap2.title=l.title||l.label;
+      const rm=document.createElement('div');rm.className='plb-rm';rm.textContent='×';
+      rm.addEventListener('click',()=>{
+        st.lineIds=st.lineIds.filter(x=>x!==lid);
+        const line=lines[lid];
+        if(line){line.stations=line.stations.filter(s=>s!==sid);redrawLine(line);}
+        if(st.lineIds.length===0){if(st.marker)map.removeLayer(st.marker);delete stations[sid];map.closePopup();updateStats();return;}
+        refreshMarker(st);rebuildBadges();rebuildAdd();updateRouteDiagram();updateStats();
+      });
+      wrap2.appendChild(rm);linesRow.appendChild(wrap2);
+    });
+  }
+  rebuildBadges();
+
+  const addArea=document.createElement('div');addArea.className='pp-add';
+  const addLabel=document.createElement('div');addLabel.className='pp-add-label';addLabel.textContent='Add to line:';
+  addArea.appendChild(addLabel);
+  const addRow=document.createElement('div');addRow.className='pp-add-row';
+  addArea.appendChild(addRow);
+  function rebuildAdd(){
+    addRow.innerHTML='';
+    const allDefs=[...NYC_LINES,...EXTRA_LINES,...Object.values(lines).filter(l=>l.custom)];
+    allDefs.forEach(def=>{
+      if(def.disabled)return;
+      const l=lines[def.id];if(!l)return;
+      const already=st.lineIds.includes(def.id);
+      const m=document.createElement('div');m.className='pmini'+(already?' on':'');
+      m.style.background=l.bg;m.style.color=l.fg;m.textContent=l.label;
+      m.title=already?'Already on this line':'Add to '+l.label;
+      if(!already){m.addEventListener('click',()=>{
+        st.lineIds.push(def.id);
+        if(!l.stations.includes(sid)){l.stations.push(sid);redrawLine(l);}
+        refreshMarker(st);rebuildBadges();rebuildAdd();updateRouteDiagram();updateStats();
+      });}
+      addRow.appendChild(m);
+    });
+  }
+  rebuildAdd();
+
+  const acts=document.createElement('div');acts.className='pp-actions';
+  const del=document.createElement('button');del.className='pp-btn pp-del';del.textContent='Delete Station';
+  del.addEventListener('click',()=>{deleteStation(sid);map.closePopup();});
+  acts.appendChild(del);
+
+  wrap.append(head,sub,rid,linesRow,addArea,acts);
+  L.popup({maxWidth:290,closeButton:false,autoClose:true}).setLatLng(st.latlng).setContent(wrap).openOn(map);
+}
+
+function deleteStation(sid){
+  const st=stations[sid];if(!st)return;
+  if(st.marker)map.removeLayer(st.marker);
+  st.lineIds.forEach(lid=>{const l=lines[lid];if(!l)return;l.stations=l.stations.filter(s=>s!==sid);redrawLine(l);});
+  delete stations[sid];updateRouteDiagram();updateStats();
+}
+
+// ═══════════════════════════════════════════════════════════
+// POLYLINES + CATMULL-ROM
+// ═══════════════════════════════════════════════════════════
+function catmullRom(pts,closed,steps=14){
+  if(pts.length<2)return pts;
+  const ext=closed?[pts[pts.length-1],...pts,pts[0],pts[1]]:[pts[0],...pts,pts[pts.length-1]];
+  const out=[];
+  for(let i=1;i<ext.length-2;i++){
+    const p0=ext[i-1],p1=ext[i],p2=ext[i+1],p3=ext[i+2];
+    for(let t=0;t<steps;t++){
+      const s=t/steps,s2=s*s,s3=s2*s;
+      const lat=.5*((2*p1[0])+(-p0[0]+p2[0])*s+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*s2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*s3);
+      const lng=.5*((2*p1[1])+(-p0[1]+p2[1])*s+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*s2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*s3);
+      out.push([lat,lng]);
+    }
+  }
+  if(!closed)out.push(pts[pts.length-1]);
+  return out;
+}
+
+function redrawLine(line){
+  line.polylines.forEach(p=>map.removeLayer(p));line.polylines=[];
+  if(line.stations.length<2)return;
+  let pts=line.stations.map(sid=>{const st=stations[sid];return st?st.latlng:null;}).filter(Boolean);
+  if(pts.length<2)return;
+  const closed=line.circular&&pts.length>2;
+  if(closed)pts=[...pts,pts[0]];
+  const draw=(line.smooth&&pts.length>=2)?catmullRom(closed?pts.slice(0,-1):pts,closed):pts;
+  const glow=L.polyline(draw,{color:line.bg,weight:12,opacity:.12,lineJoin:'round',lineCap:'round'});
+  const main=L.polyline(draw,{color:line.bg,weight:5, opacity:.92,lineJoin:'round',lineCap:'round'});
+  glow.addTo(map);main.addTo(map);
+  line.polylines=[glow,main];
+}
+
+// Build interpolated path (flat array of [lat,lng]) for train animation
+function buildLinePath(line){
+  if(line.stations.length<2)return[];
+  let pts=line.stations.map(sid=>{const st=stations[sid];return st?st.latlng:null;}).filter(Boolean);
+  if(pts.length<2)return[];
+  const closed=line.circular&&pts.length>2;
+  if(closed)pts=[...pts,pts[0]];
+  if(line.smooth)return catmullRom(closed?pts.slice(0,-1):pts,closed,20);
+  // dense linear interpolation for smooth movement even without curves
+  const out=[];
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i],b=pts[i+1];
+    const steps=Math.max(10,Math.round(L.latLng(a).distanceTo(L.latLng(b))/50));
+    for(let s=0;s<steps;s++){
+      const t=s/steps;
+      out.push([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]);
+    }
+  }
+  out.push(pts[pts.length-1]);
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TRAINS
+// ═══════════════════════════════════════════════════════════
+// train = {id, lineId, model, totalCars, carsPerSet, count, running, markers:[], progress:[], directions:[]}
+// progress[i] = float 0..1 along the path
+
+function toggleNewTrainForm(){
+  const f=document.getElementById('new-train-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+  if(f.style.display==='block')updateTrainCountPreview();
+}
+
+function updateTrainCountPreview(){
+  const total=parseInt(document.getElementById('nt-total').value)||0;
+  const per=parseInt(document.getElementById('nt-per').value)||1;
+  const count=Math.floor(total/Math.max(1,per));
+  document.getElementById('nt-count-preview').textContent='→ '+count+' train set'+(count!==1?'s':'');
+}
+document.addEventListener('input',e=>{
+  if(e.target.id==='nt-total'||e.target.id==='nt-per')updateTrainCountPreview();
+});
+
+function addTrain(){
+  if(!activeLineId)return;
+  const model=document.getElementById('nt-model').value.trim()||'Train';
+  const total=parseInt(document.getElementById('nt-total').value)||60;
+  const per=parseInt(document.getElementById('nt-per').value)||10;
+  const count=Math.max(1,Math.floor(total/Math.max(1,per)));
+  const line=lines[activeLineId];if(!line)return;
+
+  const tid=genId();
+  const train={id:tid,lineId:activeLineId,model,totalCars:total,carsPerSet:per,count,running:true,markers:[],progress:[],directions:[]};
+  // Distribute trains evenly along path 0..1
+  for(let i=0;i<count;i++){
+    train.progress.push(i/count);
+    train.directions.push(1);
+  }
+  line.trains.push(train);
+  spawnTrainMarkers(train,line);
+  startAnimLoop();
+  buildLinesPanel();
+  updateTrainList();
+  document.getElementById('new-train-form').style.display='none';
+  document.getElementById('nt-model').value='';
+  showToast('Added '+count+' train'+(count>1?'s':'')+' ('+model+')');
+}
+
+function spawnTrainMarkers(train,line){
+  train.markers.forEach(m=>map.removeLayer(m));
+  train.markers=[];
+  if(!train.running)return;
+  const path=buildLinePath(line);
+  if(!path.length)return;
+  for(let i=0;i<train.count;i++){
+    const idx=Math.floor(train.progress[i]*(path.length-1));
+    const pos=L.latLng(path[Math.min(idx,path.length-1)]);
+    const size=12;
+    const el=document.createElement('div');
+    el.className='train-marker';
+    el.style.cssText=`width:${size}px;height:${size}px;background:${line.bg};border:2px solid ${line.fg==='#fff'?'rgba(255,255,255,0.6)':'rgba(0,0,0,0.4)'};color:${line.fg};`;
+    el.title=train.model+' ('+train.carsPerSet+' cars)';
+    const icon=L.divIcon({html:el,className:'',iconSize:[size,size],iconAnchor:[size/2,size/2]});
+    const m=L.marker(pos,{icon,zIndexOffset:500,interactive:false});
+    m.addTo(map);
+    train.markers.push(m);
+  }
+}
+
+// Animation loop
+const TRAIN_SPEED=0.00008; // fraction of path per ms
+let lastAnimTime=null;
+
+function startAnimLoop(){
+  if(trainAnimFrame)return;
+  lastAnimTime=performance.now();
+  function loop(now){
+    const dt=Math.min(now-lastAnimTime,100);lastAnimTime=now;
+    animateTrains(dt);
+    trainAnimFrame=requestAnimationFrame(loop);
+  }
+  trainAnimFrame=requestAnimationFrame(loop);
+}
+
+function stopAnimLoop(){
+  if(trainAnimFrame){cancelAnimationFrame(trainAnimFrame);trainAnimFrame=null;}
+}
+
+function anyTrainRunning(){
+  return Object.values(lines).some(l=>l.trains&&l.trains.some(t=>t.running));
+}
+
+function animateTrains(dt){
+  let hasAny=false;
+  Object.values(lines).forEach(line=>{
+    if(!line.trains||!line.trains.length)return;
+    const path=buildLinePath(line);
+    if(path.length<2)return;
+    line.trains.forEach(train=>{
+      if(!train.running)return;
+      hasAny=true;
+      for(let i=0;i<train.count;i++){
+        train.progress[i]+=TRAIN_SPEED*dt*train.directions[i];
+        if(train.progress[i]>=1){
+          if(line.circular){train.progress[i]-=1;}
+          else{train.progress[i]=1;train.directions[i]=-1;}
+        } else if(train.progress[i]<=0){
+          train.directions[i]=1;train.progress[i]=0;
+        }
+        const idx=Math.min(Math.floor(train.progress[i]*(path.length-1)),path.length-1);
+        if(train.markers[i])train.markers[i].setLatLng(L.latLng(path[idx]));
+      }
+    });
+  });
+  if(!hasAny)stopAnimLoop();
+}
+
+function stopAllTrainsOnLine(lineId){
+  const line=lines[lineId];if(!line)return;
+  line.trains.forEach(train=>{
+    train.running=false;
+    train.markers.forEach(m=>map.removeLayer(m));
+    train.markers=[];
+  });
+  if(!anyTrainRunning())stopAnimLoop();
+}
+
+function removeTrain(lineId,trainId){
+  const line=lines[lineId];if(!line)return;
+  const train=line.trains.find(t=>t.id===trainId);if(!train)return;
+  train.running=false;
+  train.markers.forEach(m=>map.removeLayer(m));
+  train.markers=[];
+  line.trains=line.trains.filter(t=>t.id!==trainId);
+  if(!anyTrainRunning())stopAnimLoop();
+  buildLinesPanel();updateTrainList();updateStatTrains();
+}
+
+function setTrainRunning(lineId,trainId,running){
+  const line=lines[lineId];if(!line)return;
+  const train=line.trains.find(t=>t.id===trainId);if(!train)return;
+  train.running=running;
+  if(running){spawnTrainMarkers(train,line);startAnimLoop();}
+  else{train.markers.forEach(m=>map.removeLayer(m));train.markers=[];if(!anyTrainRunning())stopAnimLoop();}
+  buildLinesPanel();updateTrainList();updateStatTrains();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ROUTE DIAGRAM + TRAIN LIST
+// ═══════════════════════════════════════════════════════════
+function toggleRouteDiagram(){
+  routeOpen=!routeOpen;
+  document.getElementById('route-body').className=routeOpen?'open':'';
+  document.getElementById('rti').className=routeOpen?'open':'';
+}
+
+function updateRouteDiagram(){
+  const body=document.getElementById('route-content');
+  const trainSec=document.getElementById('train-section');
+  if(!activeLineId){body.innerHTML='<div class="no-msg">Select a line to see its route.</div>';trainSec.style.display='none';return;}
+  const line=lines[activeLineId];
+  if(!line||!line.stations.length){body.innerHTML='<div class="no-msg">No stations on this line yet.</div>';trainSec.style.display='block';updateTrainList();return;}
+  body.innerHTML='';
+  const sids=line.circular?[...line.stations,line.stations[0]]:line.stations;
+  sids.forEach((sid,i)=>{
+    const st=stations[sid];if(!st)return;
+    if(i>0){const seg=document.createElement('div');seg.style.cssText=`width:3px;height:12px;background:${line.bg};margin-left:9px;border-radius:2px;opacity:.8`;body.appendChild(seg);}
+    const row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:7px;cursor:pointer';
+    row.addEventListener('click',()=>map.setView(st.latlng,14));
+    const dot=document.createElement('div');dot.style.cssText=`width:9px;height:9px;border-radius:50%;border:2px solid ${line.bg};background:#fff;flex-shrink:0`;
+    const name=document.createElement('span');name.style.cssText='font-size:11px;color:#bbb';
+    const isReturn=line.circular&&i===sids.length-1;
+    name.textContent=st.name+(isReturn?' ↩':'')+(st.lineIds.length>1?' ⇄':'');
+    row.append(dot,name);body.appendChild(row);
+  });
+  if(line.circular){const n=document.createElement('div');n.style.cssText='font-size:9px;color:#b080c0;text-align:center;margin-top:3px';n.textContent='⟳ Circular line';body.appendChild(n);}
+  trainSec.style.display='block';
+  updateTrainList();
+}
+
+function updateTrainList(){
+  const list=document.getElementById('train-list');
+  list.innerHTML='';
+  if(!activeLineId)return;
+  const line=lines[activeLineId];
+  if(!line||!line.trains.length){list.innerHTML='<div class="no-msg" style="font-size:10px">No trains assigned.</div>';return;}
+  line.trains.forEach(train=>{
+    const item=document.createElement('div');item.className='train-item';
+    const tdot=document.createElement('div');tdot.className='train-item-dot';
+    tdot.style.cssText=`background:${line.bg};color:${line.bg}`;
+    tdot.style.boxShadow=`0 0 5px ${line.bg}`;
+    const info=document.createElement('div');info.className='train-item-info';
+    const nm=document.createElement('div');nm.className='train-item-name';nm.textContent=train.model;
+    const sub=document.createElement('div');sub.className='train-item-sub';
+    sub.textContent=train.count+' sets · '+train.carsPerSet+' cars/set · '+(train.running?'🟢 Running':'🔴 Stopped');
+    info.append(nm,sub);
+    const btns=document.createElement('div');btns.className='train-item-btns';
+    if(train.running){
+      const stopBtn=document.createElement('button');stopBtn.className='ti-btn stop';stopBtn.textContent='Stop';
+      stopBtn.addEventListener('click',()=>setTrainRunning(train.lineId,train.id,false));
+      btns.appendChild(stopBtn);
+    } else {
+      const runBtn=document.createElement('button');runBtn.className='ti-btn run';runBtn.textContent='Run';
+      runBtn.addEventListener('click',()=>setTrainRunning(train.lineId,train.id,true));
+      btns.appendChild(runBtn);
+    }
+    const delBtn=document.createElement('button');delBtn.className='ti-btn del';delBtn.textContent='Del';
+    delBtn.addEventListener('click',()=>removeTrain(train.lineId,train.id));
+    btns.appendChild(delBtn);
+    item.append(tdot,info,btns);list.appendChild(item);
+  });
+  updateStatTrains();
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════════════════
+function updateStats(){
+  const n=Object.keys(stations).length;
+  const riders=n*3400;
+  const r=Math.min(100,n*3.2);
+  const rating=r>=90?'A+':r>=80?'A':r>=70?'B+':r>=60?'B':r>=50?'C+':n>0?'C':'—';
+  document.getElementById('stat-riders').textContent=n>0?(riders>=1e6?(riders/1e6).toFixed(2)+' mil':riders.toLocaleString()):'—';
+  document.getElementById('stat-rating').textContent=rating;
+  updateStatTrains();
+}
+function updateStatTrains(){
+  const total=Object.values(lines).reduce((s,l)=>s+l.trains.filter(t=>t.running).reduce((a,t)=>a+t.count,0),0);
+  document.getElementById('stat-trains').textContent=total;
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXTRA / CUSTOM
+// ═══════════════════════════════════════════════════════════
+function toggleExtra(){
+  extraVisible=!extraVisible;
+  document.getElementById('extra-lines-wrap').style.display=extraVisible?'block':'none';
+  document.getElementById('toggle-extra-btn').textContent=extraVisible?'Hide Additional Lines':'Show Additional Lines';
+}
+function toggleCustomForm(){
+  const f=document.getElementById('custom-line-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+}
+function addCustomLine(){
+  const name=document.getElementById('cl-name').value.trim();if(!name)return;
+  const bg=document.getElementById('cl-bg').value;
+  const fg=document.getElementById('cl-fg').value;
+  const id='CX_'+genId();
+  lines[id]={id,label:name.substring(0,4),title:name,bg,fg,stations:[],circular:false,smooth:false,polylines:[],custom:true,trains:[]};
+  document.getElementById('cl-name').value='';
+  if(!extraVisible)toggleExtra();
+  buildLinesPanel();selectLine(id);
+  document.getElementById('custom-line-form').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════════════
+// CLEAR ALL
+// ═══════════════════════════════════════════════════════════
+function clearAll(){
+  stopAnimLoop();
+  Object.values(lines).forEach(l=>{
+    l.trains.forEach(t=>{t.markers.forEach(m=>map.removeLayer(m));});
+    l.trains=[];l.polylines.forEach(p=>map.removeLayer(p));l.stations=[];l.polylines=[];
+  });
+  Object.values(stations).forEach(st=>{if(st.marker)map.removeLayer(st.marker);});
+  stations={};activeLineId=null;
+  buildLinesPanel();updateRouteDiagram();updateStats();
+}
+function startScratch(){
+  if(!confirm('Clear everything and start from scratch?'))return;
+  clearAll();map.setView([40.728,-73.944],12);
+}
+
+// ═══════════════════════════════════════════════════════════
+// BULK ADD helper — supports [[lat,lng,name,[extraLineIds]], ...]
+// ═══════════════════════════════════════════════════════════
+function bulk(lineId,defs){
+  const line=lines[lineId];if(!line)return;
+  defs.forEach(([lat,lng,name,...rest])=>{
+    const extraIds=(rest[0]&&Array.isArray(rest[0]))?rest[0]:[];
+    const sid=genId();
+    const st={id:sid,latlng:[lat,lng],name,borough:boroughOf({lat,lng}),
+               ridership:Math.floor(Math.random()*8000)+800,
+               lineIds:[lineId,...extraIds],marker:null};
+    stations[sid]=st;line.stations.push(sid);
+    extraIds.forEach(eid=>{if(lines[eid]&&!lines[eid].stations.includes(sid))lines[eid].stations.push(sid);});
+    createMarker(st);
+  });
+  redrawLine(line);
+}
+
+// ═══════════════════════════════════════════════════════════
+// PRESETS
+// ═══════════════════════════════════════════════════════════
+function loadPreset(name){
+  clearAll();
+
+  if(name==='nyc2024'){
+    map.setView([40.728,-73.944],11);
+    bulk('A',[[40.8681,-73.9208,'207 St'],[40.8577,-73.9265,'Dyckman St'],[40.8513,-73.9321,'190 St'],[40.8431,-73.9393,'181 St'],[40.8244,-73.9432,'175 St'],[40.8160,-73.9499,'168 St'],[40.8037,-73.9535,'145 St'],[40.7988,-73.9535,'125 St'],[40.7907,-73.9724,'59 St–Columbus Cir',['C','E']],[40.7549,-73.9997,'42 St–Port Auth',['C','E']],[40.7449,-74.0039,'34 St–Penn Station',['C','E']],[40.7407,-74.0074,'23 St'],[40.7284,-74.0104,'14 St',['C']],[40.7132,-74.0128,'Canal St'],[40.7028,-74.0156,'Fulton St',['C','E']],[40.6920,-74.0167,'High St'],[40.6748,-73.9978,'Howard Beach'],[40.6650,-73.9900,'Ozone Park–Lefferts Blvd']]);
+    bulk('B',[[40.8750,-73.9060,'Bedford Pk Blvd'],[40.8609,-73.8940,'Fordham Rd'],[40.8126,-73.9499,'145 St'],[40.7988,-73.9535,'125 St'],[40.7907,-73.9724,'59 St–Columbus Cir',['D']],[40.7645,-73.9976,'47–50 Sts'],[40.7549,-73.9997,'42 St–Bryant Pk',['D']],[40.7418,-73.9896,'34 St–Herald Sq',['D','F','M','N','Q','R','W']],[40.7218,-73.9983,'Broadway–Lafayette',['D','F','M']],[40.7126,-74.0097,'Grand St'],[40.6886,-73.9979,'Atlantic Av–Barclays Ctr',['D']],[40.6064,-73.9778,'Coney Island',['D','F','N','Q']]]);
+    bulk('F',[[40.7469,-73.8902,'Jamaica–179 St'],[40.7516,-73.9028,'169 St'],[40.7507,-73.9937,'Jackson Hts–Roosevelt Av',['M']],[40.7645,-73.9976,'Lex Av/63 St'],[40.7418,-73.9896,'34 St–Herald Sq',['M']],[40.7218,-73.9983,'14 St',['M']],[40.7024,-73.9886,'Essex St',['M']],[40.6886,-73.9979,'Bergen St'],[40.6064,-73.9778,'Coney Island']]);
+    bulk('G',[[40.7469,-73.9023,'Court Sq'],[40.7231,-73.9443,'Nassau Av'],[40.7180,-73.9508,'Metropolitan Av'],[40.6994,-73.9484,'Myrtle–Willoughby Avs'],[40.6776,-73.9614,'Clinton–Washington Avs'],[40.6623,-73.9898,'Church Av'],[40.6419,-73.9794,'4 Av–9 St']]);
+    bulk('J',[[40.7021,-73.7904,'Jamaica Center'],[40.7056,-73.8382,'Woodhaven Blvd'],[40.7056,-73.8753,'Cypress Hills'],[40.7024,-73.9886,'Essex St',['Z','F','M']],[40.7126,-74.0097,'Fulton St',['A','C','E','2','3','4','5']]]);
+    bulk('L',[[40.6462,-73.9004,'Canarsie'],[40.6601,-73.9302,'New Lots Av'],[40.7024,-73.9886,'14 St–Union Sq',['N','Q','R','W','4','5','6']],[40.7316,-73.9973,'6 Av'],[40.7407,-74.0074,'8 Av']]);
+    bulk('N',[[40.7785,-73.9054,'Astoria–Ditmars Blvd',['W']],[40.7603,-73.9279,'30 Av',['W']],[40.7445,-73.9500,'Queensboro Plaza',['W','7']],[40.7549,-73.9997,'Times Sq–42 St',['Q','R','W','1','2','3','7']],[40.7418,-73.9896,'34 St–Herald Sq',['Q','R','W','B','D','F','M']],[40.7218,-73.9983,'14 St–Union Sq',['Q','R','W','L','4','5','6']],[40.7126,-74.0097,'Canal St',['Q','R','W']],[40.6886,-73.9979,'Atlantic Av–Barclays Ctr',['Q','R','W','B','D','2','3','4','5']],[40.6200,-73.9800,'Bay Ridge–95 St']]);
+    bulk('1',[[40.8788,-73.9069,'Van Cortlandt Pk–242 St'],[40.8244,-73.9432,'181 St'],[40.7988,-73.9724,'125 St'],[40.7684,-73.9983,'59 St–Columbus Cir',['2','3','A','B','C','D']],[40.7549,-74.0040,'Times Sq–42 St',['2','3','N','Q','R','W','7','A','C','E','S1']],[40.7449,-74.0009,'34 St–Penn Station',['2','3','A','C','E']],[40.7218,-74.0030,'14 St',['2','3']],[40.7028,-74.0100,'Chambers St',['2','3']],[40.6851,-74.0034,'South Ferry']]);
+    bulk('4',[[40.8975,-73.8655,'Woodlawn'],[40.7907,-73.9395,'161 St–Yankee Stadium',['D']],[40.7988,-73.9535,'125 St',['5','6']],[40.7549,-73.9997,'Grand Central–42 St',['5','6','7','S1']],[40.7218,-73.9820,'14 St–Union Sq',['5','6','N','Q','R','W','L']],[40.7024,-74.0130,'Bowling Green',['5']],[40.6886,-73.9979,'Atlantic Av–Barclays Ctr',['5','B','D','N','Q','R','W','2','3']]]);
+    bulk('6',[[40.9007,-73.8655,'Pelham Bay Park'],[40.7988,-73.9535,'125 St',['4','5']],[40.7549,-73.9997,'Grand Central–42 St',['4','5','7','S1']],[40.7218,-73.9820,'14 St–Union Sq',['4','5','N','Q','R','W','L']],[40.7126,-74.0097,'Brooklyn Bridge–City Hall',['4','5']]]);
+    bulk('7',[[40.7469,-73.8300,'Flushing–Main St'],[40.7507,-73.9937,'Jackson Hts–Roosevelt Av',['E','F','M']],[40.7445,-73.9500,'Queensboro Plaza',['N','W']],[40.7549,-73.9997,'Times Sq–42 St',['1','2','3','N','Q','R','W','A','C','E','S1']]]);
+    bulk('S1',[[40.7549,-73.9997,'Times Sq',['1','2','3','N','Q','R','W','7','A','C','E']],[40.7527,-73.9777,'Grand Central',['4','5','6','7']]]);
+    bulk('S2',[[40.6812,-73.9575,'Prospect Park'],[40.6683,-73.9575,'Park Place'],[40.6623,-73.9575,'Franklin Av'],[40.6501,-73.9575,'Botanic Garden']]);
+    bulk('S3',[[40.6064,-73.9778,'Broad Channel'],[40.5988,-73.9800,'Rockaway Pk–116 St']]);
+    bulk('SI',[[40.6439,-74.0757,'St. George'],[40.6130,-74.0830,'Clifton'],[40.5710,-74.1260,'Grant City'],[40.5380,-74.1580,'Great Kills'],[40.4720,-74.2220,'Tottenville']]);
+    Object.values(lines).forEach(l=>{if(l.stations.length>=2)redrawLine(l);});
+    updateStats();showToast('2024 NYC Map — '+Object.keys(stations).length+' stations');
+
+  } else if(name==='vignelli'){
+    map.setView([40.720,-73.960],11);
+    bulk('A',[[40.880,-73.965,'207 St'],[40.860,-73.965,'190 St'],[40.840,-73.965,'181 St'],[40.820,-73.965,'168 St'],[40.800,-73.965,'145 St'],[40.780,-73.965,'125 St'],[40.757,-73.990,'59 St',['C']],[40.750,-73.990,'42 St–Port Auth',['C','E']],[40.740,-73.990,'34 St',['C','E']],[40.727,-73.990,'14 St',['C']],[40.712,-73.990,'Canal St'],[40.700,-73.990,'Fulton St',['C','E']],[40.690,-73.990,'High St']]);
+    bulk('B',[[40.875,-73.890,'Bedford Pk Blvd',['D']],[40.830,-73.910,'182 St',['D']],[40.800,-73.960,'145 St'],[40.780,-73.960,'125 St'],[40.757,-73.985,'59 St',['D']],[40.750,-73.990,'42 St',['D','F']],[40.740,-73.990,'34 St',['D','F','M','N','Q','R']],[40.712,-73.985,'Grand St',['D']],[40.689,-73.985,'Atlantic Av',['D','N','Q','R','2','3','4','5']],[40.640,-73.980,'Coney Island',['D','F','N','Q']]]);
+    bulk('F',[[40.748,-73.870,'Jamaica–179 St'],[40.748,-73.930,'Roosevelt Av',['M']],[40.748,-73.960,'Queens Plaza',['M']],[40.750,-73.990,'42 St',['B','D']],[40.740,-73.990,'34 St',['B','D','M','N','Q','R']],[40.727,-73.985,'14 St',['M']],[40.712,-73.985,'Broadway–Lafayette',['D','M']],[40.700,-73.975,'Delancey St',['M']],[40.640,-73.985,'Coney Island']]);
+    bulk('G',[[40.747,-73.903,'Court Sq'],[40.729,-73.925,'Nassau Av'],[40.718,-73.947,'Metropolitan Av'],[40.700,-73.955,'Flushing Av'],[40.686,-73.952,'Bedford–Nostrand'],[40.665,-73.980,'Fulton St'],[40.646,-73.988,'Smith–9 Sts']]);
+    bulk('J',[[40.701,-73.790,'Jamaica Center'],[40.706,-73.840,'Woodhaven Blvd'],[40.706,-73.875,'Cypress Hills'],[40.700,-73.985,'Essex St',['Z']],[40.710,-74.000,'Fulton St']]);
+    bulk('L',[[40.644,-73.900,'Canarsie'],[40.660,-73.940,'Atlantic Av'],[40.710,-73.985,'Jefferson St'],[40.727,-73.990,'14 St–Union Sq',['N','Q','R']]]);
+    bulk('N',[[40.778,-73.930,'Astoria',['Q','R','W']],[40.756,-73.932,'30 Av',['Q']],[40.748,-73.950,'Queensboro Plaza',['7']],[40.755,-73.960,'Lex/59 St',['4','5','6']],[40.750,-73.990,'Times Sq–42 St',['Q','R','1','2','3','7']],[40.740,-73.990,'34 St',['Q','R','B','D','F','M']],[40.727,-73.990,'14 St',['Q','R','L']],[40.710,-73.990,'Canal St',['Q','R']],[40.700,-73.990,'City Hall',['Q','R']],[40.689,-73.985,'Atlantic Av',['Q','R','B','D','2','3','4','5']],[40.640,-73.980,'Coney Island',['Q','F']]]);
+    bulk('1',[[40.900,-73.898,'242 St'],[40.840,-73.934,'207 St'],[40.804,-73.962,'168 St'],[40.790,-73.972,'125 St'],[40.750,-73.990,'59 St',['2','3','A','B','C','D']],[40.750,-73.994,'Times Sq',['2','3','N','Q','R','7','A','C','E','S1']],[40.740,-73.994,'34 St',['2','3','A','C','E']],[40.727,-73.997,'14 St',['2','3']],[40.706,-74.005,'Chambers St',['2','3']],[40.700,-74.014,'South Ferry']]);
+    bulk('2',[[40.898,-73.851,'241 St'],[40.831,-73.898,'3 Av–149 St'],[40.808,-73.941,'125 St',['3']],[40.757,-73.990,'Times Sq',['1','3','N','Q','R','7']],[40.740,-73.990,'34 St',['1','3']],[40.706,-74.005,'Fulton St',['1','3','4','5','A','C','J','Z']],[40.689,-73.985,'Atlantic Av',['1','3','4','5','B','D','N','Q','R']],[40.640,-73.951,'Flatbush Av']]);
+    bulk('4',[[40.890,-73.862,'Woodlawn'],[40.784,-73.940,'161 St',['D','B']],[40.752,-73.942,'125 St',['5','6']],[40.751,-73.977,'Grand Central–42 St',['5','6','7','S1']],[40.732,-73.984,'14 St–Union Sq',['5','6','N','Q','R','L']],[40.698,-74.002,'Brooklyn Bridge',['5','6']],[40.689,-73.985,'Atlantic Av',['5','B','D','N','Q','R','2','3']]]);
+    bulk('6',[[40.866,-73.829,'Pelham Bay Park'],[40.752,-73.942,'125 St',['4','5']],[40.751,-73.977,'Grand Central',['4','5','7','S1']],[40.732,-73.984,'14 St–Union Sq',['4','5','N','Q','R','L']],[40.700,-74.001,'Brooklyn Bridge',['4','5']]]);
+    bulk('7',[[40.742,-73.830,'Flushing–Main St'],[40.748,-73.950,'Queensboro Plaza',['N']],[40.754,-73.994,'Times Sq',['1','2','3','N','Q','R','A','C','E','S1']]]);
+    bulk('S1',[[40.754,-73.994,'Times Sq',['1','2','3','7','N','Q','R']],[40.752,-73.977,'Grand Central',['4','5','6','7']]]);
+    bulk('SI',[[40.643,-74.074,'St. George'],[40.563,-74.134,'Grant City'],[40.480,-74.214,'Tottenville']]);
+    Object.values(lines).forEach(l=>{if(l.stations.length>=2)redrawLine(l);});
+    updateStats();showToast('1972 Vignelli Map — '+Object.keys(stations).length+' stations');
+
+  } else if(name==='nyc1967'){
+    map.setView([40.728,-73.944],11);
+    // Historical lines for 1967
+    const hist=[
+      {id:'AA',label:'AA',bg:C.BLUE,  fg:'#fff',title:'AA – 8th Ave Shuttle (hist.)'},
+      {id:'BB',label:'BB',bg:C.ORANGE,fg:'#fff',title:'BB – 6th Ave Local (hist.)'},
+      {id:'CC',label:'CC',bg:C.BLUE,  fg:'#fff',title:'CC – 8th Ave Local (hist.)'},
+      {id:'EE',label:'EE',bg:C.BLUE,  fg:'#fff',title:'EE – Queens–8th Ave (hist.)'},
+      {id:'GG',label:'GG',bg:C.GREEN, fg:'#fff',title:'GG – Crosstown (hist.)'},
+      {id:'KK',label:'KK',bg:C.YELLOW,fg:'#000',title:'KK – BMT Local (hist.)'},
+      {id:'LL',label:'LL',bg:C.GREY,  fg:'#fff',title:'LL – Canarsie (hist.)'},
+      {id:'RR',label:'RR',bg:C.YELLOW,fg:'#000',title:'RR – Broadway Local (hist.)'},
+      {id:'QJ',label:'QJ',bg:C.BROWN, fg:'#fff',title:'QJ – Jamaica Local (hist.)'},
+      {id:'9', label:'9', bg:C.RED,   fg:'#fff',title:'9 – 7th Ave Skip-Stop (disc. 2005)'},
+    ];
+    hist.forEach(def=>{if(!lines[def.id])lines[def.id]={...def,stations:[],circular:false,smooth:false,polylines:[],custom:true,trains:[]};});
+
+    bulk('A',[[40.880,-73.965,'207 St'],[40.860,-73.965,'190 St'],[40.820,-73.965,'168 St'],[40.800,-73.965,'145 St'],[40.780,-73.965,'125 St'],[40.757,-73.990,'59 St',['CC']],[40.750,-73.990,'42 St',['CC','EE']],[40.740,-73.990,'34 St',['CC','EE']],[40.727,-73.990,'14 St',['CC']],[40.712,-73.990,'Canal St'],[40.700,-73.990,'Fulton St',['CC','EE']],[40.690,-73.990,'High St']]);
+    bulk('CC',[[40.820,-73.965,'168 St'],[40.800,-73.965,'145 St'],[40.780,-73.965,'125 St'],[40.757,-73.990,'59 St'],[40.750,-73.990,'42 St'],[40.740,-73.990,'34 St'],[40.727,-73.990,'14 St'],[40.712,-73.990,'Canal St'],[40.700,-73.990,'Fulton St']]);
+    bulk('BB',[[40.875,-73.890,'Bedford Pk Blvd'],[40.800,-73.960,'145 St'],[40.780,-73.960,'125 St'],[40.757,-73.985,'59 St'],[40.750,-73.990,'42 St'],[40.740,-73.990,'34 St',['D','RR','KK']],[40.712,-73.985,'Grand St'],[40.689,-73.985,'Atlantic Av',['D','RR','KK','2','3','4','5']],[40.640,-73.980,'Coney Island',['D']]]);
+    bulk('D',[[40.875,-73.890,'Bedford Pk Blvd',['BB']],[40.800,-73.960,'145 St'],[40.780,-73.960,'125 St'],[40.757,-73.985,'59 St',['BB']],[40.750,-73.990,'42 St',['BB']],[40.740,-73.990,'34 St',['BB','RR','KK']],[40.712,-73.985,'Grand St'],[40.689,-73.985,'Atlantic Av',['BB','RR','KK','2','3','4','5']],[40.640,-73.980,'Coney Island']]);
+    bulk('GG',[[40.747,-73.903,'Court Sq'],[40.729,-73.925,'Nassau Av'],[40.718,-73.947,'Metropolitan Av'],[40.700,-73.955,'Flushing Av'],[40.686,-73.952,'Bedford–Nostrand'],[40.665,-73.980,'Fulton St'],[40.646,-73.988,'Smith–9 Sts']]);
+    bulk('QJ',[[40.701,-73.790,'Jamaica Center'],[40.706,-73.840,'Woodhaven Blvd'],[40.706,-73.875,'Cypress Hills'],[40.700,-73.985,'Essex St'],[40.710,-74.000,'Fulton St']]);
+    bulk('LL',[[40.644,-73.900,'Canarsie'],[40.660,-73.940,'Atlantic Av'],[40.710,-73.985,'Jefferson St'],[40.727,-73.990,'14 St–Union Sq',['KK','RR']]]);
+    bulk('KK',[[40.778,-73.930,'Astoria'],[40.748,-73.950,'Queensboro Plaza',['7']],[40.750,-73.990,'Times Sq',['RR','1','2','3','9','7']],[40.740,-73.990,'34 St',['RR','D','BB']],[40.727,-73.990,'14 St',['RR','LL']],[40.710,-73.990,'Canal St',['RR']],[40.700,-73.990,'City Hall',['RR']],[40.689,-73.985,'Atlantic Av',['RR','D','BB','2','3','4','5']],[40.640,-73.980,'95 St']]);
+    bulk('RR',[[40.733,-73.875,'Forest Hills–71 Av'],[40.748,-73.960,'Queens Plaza'],[40.750,-73.990,'Times Sq',['KK','1','2','3','9','7']],[40.740,-73.990,'34 St',['KK','D','BB']],[40.727,-73.990,'14 St',['KK','LL']],[40.710,-73.990,'Canal St',['KK']],[40.689,-73.985,'Atlantic Av',['KK','D','BB','2','3','4','5']],[40.640,-73.980,'95 St']]);
+    bulk('1',[[40.900,-73.898,'242 St'],[40.840,-73.934,'207 St'],[40.804,-73.962,'168 St'],[40.790,-73.972,'125 St'],[40.750,-73.990,'59 St',['2','3','9','A','CC']],[40.750,-73.994,'Times Sq',['2','3','9','KK','RR','7','A','CC','EE','S1']],[40.740,-73.994,'34 St',['2','3','9','A','CC','EE']],[40.727,-73.997,'14 St',['2','3','9']],[40.706,-74.005,'Chambers St',['2','3','9']],[40.700,-74.014,'South Ferry']]);
+    bulk('9',[[40.750,-73.994,'Times Sq',['1','2','3','7','KK','RR']],[40.740,-73.994,'34 St',['1','2','3']],[40.727,-73.997,'14 St',['1','2','3']],[40.700,-74.014,'South Ferry']]);
+    bulk('4',[[40.890,-73.862,'Woodlawn'],[40.784,-73.940,'161 St',['D','BB']],[40.752,-73.942,'125 St',['5','6']],[40.751,-73.977,'Grand Central',['5','6','7','S1']],[40.732,-73.984,'14 St–Union Sq',['5','6','KK','RR','LL']],[40.698,-74.002,'Brooklyn Bridge',['5','6']],[40.689,-73.985,'Atlantic Av',['5','D','BB','KK','RR','2','3']]]);
+    bulk('6',[[40.866,-73.829,'Pelham Bay Park'],[40.752,-73.942,'125 St',['4','5']],[40.751,-73.977,'Grand Central',['4','5','7','S1']],[40.732,-73.984,'14 St–Union Sq',['4','5','KK','RR','LL']],[40.700,-74.001,'Brooklyn Bridge',['4','5']]]);
+    bulk('7',[[40.742,-73.830,'Flushing–Main St'],[40.748,-73.950,'Queensboro Plaza',['KK']],[40.754,-73.994,'Times Sq',['1','2','3','9','KK','RR','A','CC','EE','S1']]]);
+    bulk('S1',[[40.754,-73.994,'Times Sq',['1','2','3','9','7','KK','RR']],[40.752,-73.977,'Grand Central',['4','5','6','7']]]);
+    bulk('SI',[[40.643,-74.074,'St. George'],[40.563,-74.134,'Grant City'],[40.480,-74.214,'Tottenville']]);
+
+    if(!extraVisible)toggleExtra();
+    Object.values(lines).forEach(l=>{if(l.stations.length>=2)redrawLine(l);});
+    updateStats();showToast('1967 Historical Map — '+Object.keys(stations).length+' stations');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SAVE / LOAD JSON
+// ═══════════════════════════════════════════════════════════
+function saveToFile(){
+  const data={
+    version:3,savedAt:new Date().toISOString(),
+    stations:Object.values(stations).map(s=>({id:s.id,latlng:s.latlng,name:s.name,borough:s.borough,ridership:s.ridership,lineIds:s.lineIds})),
+    lineStates:Object.fromEntries(Object.entries(lines).map(([k,v])=>[k,{stations:v.stations,circular:v.circular||false,smooth:v.smooth||false,trains:v.trains.map(t=>({id:t.id,model:t.model,totalCars:t.totalCars,carsPerSet:t.carsPerSet,count:t.count,running:false}))}])),
+    customLines:Object.values(lines).filter(l=>l.custom).map(l=>({id:l.id,label:l.label,title:l.title||l.label,bg:l.bg,fg:l.fg})),
+    settings:{font:document.getElementById('font-select').value}
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='subway-'+Date.now()+'.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+  showToast('✓ Saved as JSON!');
+}
+
+function loadFromFile(){document.getElementById('file-input').click();}
+function handleFileLoad(evt){
+  const file=evt.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      clearAll();
+      (data.customLines||[]).forEach(cl=>{lines[cl.id]={...cl,stations:[],circular:false,smooth:false,polylines:[],custom:true,trains:[]};});
+      Object.entries(data.lineStates||{}).forEach(([lid,ls])=>{
+        if(lines[lid]){lines[lid].circular=ls.circular||false;lines[lid].smooth=ls.smooth||false;lines[lid].trains=(ls.trains||[]).map(t=>({...t,running:false,markers:[],progress:[],directions:[]}));}
+      });
+      (data.stations||[]).forEach(sd=>{const st={...sd,marker:null};stations[sd.id]=st;createMarker(st);});
+      Object.entries(data.lineStates||{}).forEach(([lid,ls])=>{if(lines[lid])lines[lid].stations=(ls.stations||[]).filter(sid=>stations[sid]);});
+      Object.values(lines).forEach(l=>{if(l.stations.length>=2)redrawLine(l);});
+      if(data.settings&&data.settings.font){const fs=document.getElementById('font-select');if(fs){fs.value=data.settings.font;changeFont(data.settings.font);}}
+      buildLinesPanel();updateStats();showToast('✓ Loaded — '+Object.keys(stations).length+' stations');
+    }catch(err){alert('Load failed: '+err.message);}
+  };
+  r.readAsText(file);evt.target.value='';
+}
+
+// ═══════════════════════════════════════════════════════════
+// MISC
+// ═══════════════════════════════════════════════════════════
+function updateModeLabel(){
+  const el=document.getElementById('mode-label');
+  if(activeLineId){
+    const l=lines[activeLineId];
+    const modeStr = editMode==='insert' ? ' [Insert mode: click near a segment]' : ' [Append mode: click to add to end]';
+    el.textContent='Line '+l.label+' selected —'+modeStr;
+  } else {
+    el.textContent='Select a line, then click the map to add stations';
+  }
+}
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',2600);
+}
+function openAbout(){document.getElementById('about-modal').classList.add('open');}
+function closeAbout(){document.getElementById('about-modal').classList.remove('open');}
+
+document.getElementById('about-modal').addEventListener('click',e=>{if(e.target===document.getElementById('about-modal'))closeAbout();});
+document.getElementById('edit-line-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-line-modal'))closeEditLine();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){clearInsertPreview();deselectLine();map.closePopup();}});
+
+// ═══════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════
+initMap();
+[...NYC_LINES,...EXTRA_LINES].forEach(ensureLine);
+buildLinesPanel();updateStats();updateModeLabel();
+</script>
+</body>
+</html>
