@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>Brand New Subway</title>
+<title>Simple Subway Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Source+Code+Pro:wght@400;700&family=Bebas+Neue&family=Nunito:wght@400;700&family=Montserrat:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
-/* ── Moscow Sans via GitHub raw ── */
 @font-face{font-family:'Moscow Sans';src:url('https://raw.githubusercontent.com/nicothin/MoscowSans/main/fonts/MoscowSans-Regular.woff2') format('woff2');font-weight:400}
 @font-face{font-family:'Moscow Sans';src:url('https://raw.githubusercontent.com/nicothin/MoscowSans/main/fonts/MoscowSans-Bold.woff2') format('woff2');font-weight:700}
 
@@ -24,9 +23,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 #map-wrap{flex:1;position:relative;overflow:hidden;min-width:0}
 #map{width:100%;height:100%}
 
-/* ─────────────────────────────────────────
-   PANEL
-───────────────────────────────────────── */
 #panel{
   width:var(--panel-w);flex-shrink:0;
   background:#222;color:#eee;
@@ -38,7 +34,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 #panel-scroll::-webkit-scrollbar{width:3px}
 #panel-scroll::-webkit-scrollbar-thumb{background:#444;border-radius:2px}
 
-/* Panel sections */
 .p-section{padding:8px 12px;border-bottom:1px solid #333}
 .p-title{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:#555;margin-bottom:6px;font-weight:600}
 
@@ -49,7 +44,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 #panel-header h1{font-size:17px;font-weight:700;color:#fff;flex:1;font-family:var(--font)}
 #mobile-close-btn{display:none;background:none;border:none;color:#888;font-size:20px;cursor:pointer;padding:0 2px;line-height:1}
 
-/* start presets */
 .start-btn{
   display:block;width:100%;background:#2a2a2a;border:1px solid #444;color:#ccc;
   padding:7px 10px;border-radius:5px;cursor:pointer;font-size:12px;text-align:left;
@@ -57,7 +51,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 }
 .start-btn:hover{background:#333}
 
-/* Line grid */
 #lines-section{padding:8px 10px 6px;border-bottom:1px solid #333}
 .lines-row{display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap}
 .line-btn{
@@ -73,7 +66,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 .line-btn.active{border-color:#fff!important;transform:scale(1.18);box-shadow:0 0 0 3px rgba(255,255,255,.15)}
 .line-btn.disabled{opacity:0.22;cursor:not-allowed}
 .line-btn.disabled:hover{transform:none;box-shadow:none}
-/* train running indicator dot */
 .line-btn .train-dot{
   position:absolute;bottom:-2px;right:-2px;
   width:8px;height:8px;border-radius:50%;
@@ -91,15 +83,13 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
   text-align:left;margin-bottom:4px;transition:background .15s;font-family:var(--font)
 }
 .expand-btn:hover{background:#333}
+.expand-btn.depot-active{background:#5a3a1a;border-color:#a86a2a;color:#fd8}
 
-/* custom line form */
 #custom-line-form{display:none;padding:8px;background:#1a1a1a;border-radius:5px;border:1px solid #333;margin-top:4px}
 .ff{margin-bottom:6px}
 .ff label{display:block;font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
-.ff input[type=text]{width:100%;background:#252525;border:1px solid #444;color:#eee;padding:5px 8px;border-radius:4px;font-size:12px;outline:none;font-family:var(--font)}
-.ff input[type=text]:focus{border-color:#666}
-.ff input[type=number]{width:100%;background:#252525;border:1px solid #444;color:#eee;padding:5px 8px;border-radius:4px;font-size:12px;outline:none;font-family:var(--font)}
-.ff input[type=number]:focus{border-color:#666}
+.ff input[type=text],.ff input[type=number]{width:100%;background:#252525;border:1px solid #444;color:#eee;padding:5px 8px;border-radius:4px;font-size:12px;outline:none;font-family:var(--font)}
+.ff input:focus{border-color:#666}
 .cpair{display:flex;gap:6px}
 .cpick{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
 .cpick label{font-size:9px;color:#666}
@@ -109,11 +99,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 .fb:hover{opacity:.85}
 .fb-ok{background:#3a5a8a;color:#adf}
 .fb-cancel{background:#3a3a3a;color:#aaa}
-.fb-danger{background:#5a2a2a;color:#f99}
 
-/* ─────────────────────────────────────────
-   ACTIVE LINE CONTROLS
-───────────────────────────────────────── */
 #controls-bar{display:none;background:#1e1e1e;padding:8px 12px;border-bottom:1px solid #333}
 #controls-bar.visible{display:flex;flex-direction:column;gap:5px}
 #ali{display:flex;align-items:center;gap:7px;margin-bottom:3px}
@@ -134,23 +120,30 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 .sw input:checked+.sw-track{background:#3a6a9a}
 .sw input:checked+.sw-track::after{transform:translateX(16px)}
 
-/* ─────────────────────────────────────────
-   ROUTE DIAGRAM
-───────────────────────────────────────── */
 #route-section{border-bottom:1px solid #333}
 #route-header{display:flex;align-items:center;gap:5px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:600;color:#ccc;user-select:none}
 #route-header:hover{background:#2a2a2a}
 #rti{font-size:8px;color:#666;transition:transform .2s;display:inline-block}
 #rti.open{transform:rotate(90deg)}
-#route-body{display:none;padding:4px 12px 10px;max-height:300px;overflow-y:auto}
+#route-body{display:none;padding:4px 12px 10px;max-height:340px;overflow-y:auto}
 #route-body.open{display:block}
 .no-msg{font-size:11px;color:#555;font-style:italic;padding:3px 0}
 
-/* train section inside route diagram */
+.route-item{display:flex;align-items:center;gap:0}
+.route-dot{
+  width:11px;height:11px;border-radius:50%;background:#fff;
+  border:2.5px solid #888;flex-shrink:0;box-sizing:border-box;
+}
+.route-line{
+  width:3px;height:14px;border-radius:2px;opacity:.85;
+  margin-left:4px;
+  flex-shrink:0;
+}
+.route-name{font-size:11px;color:#bbb;margin-left:7px}
+
 #train-section{margin-top:8px;border-top:1px solid #2a2a2a;padding-top:8px}
 .train-section-title{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px}
 .train-form{background:#1a1a1a;border:1px solid #2e2e2e;border-radius:5px;padding:8px;margin-bottom:6px}
-.train-form .ff{margin-bottom:5px}
 #train-list{display:flex;flex-direction:column;gap:4px;margin-bottom:5px}
 .train-item{
   display:flex;align-items:center;gap:6px;
@@ -170,6 +163,8 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 .ti-btn.del:hover{background:#5a1a1a}
 .ti-btn.run{border-color:#1a4a1a;color:#6f6}
 .ti-btn.run:hover{background:#1a4a1a}
+.ti-btn.edit{border-color:#1a3a5a;color:#8cf}
+.ti-btn.edit:hover{background:#1a3a5a}
 #new-train-btn{
   width:100%;padding:5px;background:#1e3a1e;border:1px solid #2a5a2a;color:#8f8;
   border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font)
@@ -177,18 +172,12 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 #new-train-btn:hover{background:#2a4a2a}
 #new-train-form{display:none}
 
-/* ─────────────────────────────────────────
-   SETTINGS
-───────────────────────────────────────── */
 #settings-section{padding:8px 12px;border-bottom:1px solid #333}
 .stitle{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px}
 .srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .slabel{font-size:11px;color:#aaa}
 .sselect{background:#252525;border:1px solid #444;color:#ddd;padding:3px 6px;border-radius:4px;font-size:11px;cursor:pointer;outline:none;max-width:160px;font-family:var(--font)}
 
-/* ─────────────────────────────────────────
-   STATS
-───────────────────────────────────────── */
 #stats-section{padding:8px 12px;border-bottom:1px solid #333}
 .stat-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .stat-row:last-child{margin-bottom:0}
@@ -196,18 +185,12 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 .stat-value{font-size:18px;font-weight:700;color:#fff;line-height:1;font-family:var(--font)}
 .stat-label{font-size:10px;color:#666;margin-top:1px}
 
-/* ─────────────────────────────────────────
-   BOTTOM BUTTONS
-───────────────────────────────────────── */
 #bottom-btns{display:flex;gap:5px;padding:8px 10px;border-top:1px solid #333;flex-shrink:0;background:#1a1a1a}
 .bottom-btn{flex:1;padding:7px 4px;background:#2a2a2a;border:1px solid #444;color:#ccc;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;transition:background .15s;font-family:var(--font);white-space:nowrap}
 .bottom-btn:hover{background:#333}
 .bottom-btn.primary{background:#1e3a5a;border-color:#3a6a9a;color:#8ad}
 .bottom-btn.primary:hover{background:#2a4a6a}
 
-/* ─────────────────────────────────────────
-   MAP OVERLAYS
-───────────────────────────────────────── */
 .leaflet-container{background:#d0ccc0}
 .leaflet-control-zoom a{background:#222!important;color:#ccc!important;border-color:#444!important}
 .leaflet-control-zoom a:hover{background:#2a2a2a!important}
@@ -217,11 +200,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 #mode-bar{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:#aaa;font-size:10px;padding:3px 8px;z-index:600;pointer-events:none;display:flex;justify-content:space-between;font-family:var(--font)}
 #toast{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#eee;padding:5px 16px;border-radius:16px;font-size:11px;z-index:700;pointer-events:none;display:none;white-space:nowrap;font-family:var(--font)}
 
-/* map provider select (top right) */
-#map-prov-bar{position:absolute;top:8px;right:8px;z-index:700}
-#map-prov-sel{background:#222;border:1px solid #444;color:#ccc;padding:4px 7px;border-radius:4px;font-size:10px;cursor:pointer;outline:none;font-family:var(--font)}
-
-/* mobile panel toggle button */
 #panel-toggle{
   display:none;
   position:absolute;bottom:30px;right:12px;
@@ -232,14 +210,23 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
   box-shadow:0 2px 10px rgba(0,0,0,.5);
 }
 
-/* ─────────────────────────────────────────
-   STATION DOT & POPUP
-───────────────────────────────────────── */
 .sdot{width:13px;height:13px;border-radius:50%;background:#fff;border:3px solid #555;cursor:pointer;transition:transform .12s;box-shadow:0 1px 4px rgba(0,0,0,.5)}
 .sdot:hover{transform:scale(1.35)}
 .sdot.xfer{width:17px;height:17px;border:3px solid #fff;box-shadow:0 0 0 2px #555,0 2px 6px rgba(0,0,0,.6)}
 
-.popup{background:#111;border-radius:6px;min-width:200px;max-width:270px;box-shadow:0 4px 20px rgba(0,0,0,.8);overflow:hidden;font-family:var(--font)}
+.depot-marker{
+  width:32px;height:32px;
+  background:#2a2a2a;
+  border:3px solid #fa0;
+  border-radius:4px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;
+  box-shadow:0 3px 10px rgba(0,0,0,.7);
+  transition:transform .12s;
+}
+.depot-marker:hover{transform:scale(1.12)}
+
+.popup{background:#111;border-radius:6px;min-width:200px;max-width:280px;box-shadow:0 4px 20px rgba(0,0,0,.8);overflow:hidden;font-family:var(--font)}
 .pp-head{display:flex;align-items:flex-start;justify-content:space-between;padding:9px 11px 5px;border-bottom:1px solid #222}
 .pp-name{font-size:14px;font-weight:700;color:#fff;flex:1;outline:none;cursor:text;line-height:1.3}
 .pp-name:focus{border-bottom:1px dashed #444}
@@ -251,7 +238,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 .plb{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;font-family:var(--font);position:relative}
 .plb-rm{position:absolute;top:-4px;right:-4px;width:11px;height:11px;border-radius:50%;background:#2a2a2a;border:1px solid #555;display:flex;align-items:center;justify-content:center;font-size:8px;color:#f66;cursor:pointer;line-height:1}
 .plb-rm:hover{background:#5a1a1a}
-.pp-add{padding:4px 11px 5px;border-bottom:1px solid #1a1a1a}
+.pp-add{padding:5px 11px 6px;border-bottom:1px solid #1a1a1a}
 .pp-add-label{font-size:9px;color:#444;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
 .pp-add-row{display:flex;gap:3px;flex-wrap:wrap}
 .pmini{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:8px;cursor:pointer;opacity:.65;transition:opacity .1s,transform .1s;font-family:var(--font)}
@@ -267,9 +254,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 .leaflet-popup-tip-container{display:none!important}
 .leaflet-popup-close-button{display:none!important}
 
-/* ─────────────────────────────────────────
-   MODALS
-───────────────────────────────────────── */
 .modal-ov{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:16px}
 .modal-ov.open{display:flex}
 .modal-box{background:#222;border:1px solid #444;border-radius:8px;padding:20px 24px;max-width:380px;width:100%;color:#ddd;font-family:var(--font)}
@@ -278,25 +262,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 .mbtn{background:#333;border:none;color:#ccc;padding:6px 16px;border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font)}
 .mbtn:hover{background:#3a3a3a}
 
-/* ─────────────────────────────────────────
-   EDIT MODE SWITCHER
-───────────────────────────────────────── */
-#edit-mode-bar{
-  display:flex;gap:0;border:1px solid #3a3a3a;border-radius:5px;overflow:hidden;
-  margin-top:4px;
-}
-.emode-btn{
-  flex:1;padding:5px 4px;border:none;background:#1e1e1e;color:#777;
-  cursor:pointer;font-size:10px;font-weight:600;font-family:var(--font);
-  transition:background .15s,color .15s;text-align:center;line-height:1.3;
-  border-right:1px solid #333;
-}
-.emode-btn:last-child{border-right:none}
-.emode-btn:hover{background:#282828;color:#bbb}
-.emode-btn.active{background:#223a22;color:#8f8;border-bottom:2px solid #4a8}
-.emode-btn#emode-insert.active{background:#2a2a1a;color:#ee8;border-bottom:2px solid #aa6}
-
-/* floating insert-hint that follows cursor on map */
 #insert-hint{
   position:absolute;
   background:rgba(10,10,10,.82);color:#cfc;border:1px solid #3a5a3a;
@@ -306,19 +271,14 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
   transform:translate(14px,-50%);
 }
 
-/* ─────────────────────────────────────────
-   TRAIN MARKERS ON MAP
-───────────────────────────────────────── */
 .train-marker{
   border-radius:50%;
   cursor:default;
   box-shadow:0 0 6px rgba(0,0,0,.6),0 0 10px currentColor;
   transition:none;
+  will-change:transform;
 }
 
-/* ─────────────────────────────────────────
-   MOBILE RESPONSIVE
-───────────────────────────────────────── */
 @media (max-width:640px){
   :root{--panel-w:100vw}
   #app{position:relative}
@@ -334,14 +294,12 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
   #panel.mobile-open{transform:translateX(0)}
   #mobile-close-btn{display:block}
   #panel-toggle{display:flex}
-  #map-prov-bar{top:8px;right:8px}
   #mode-bar span:last-child{display:none}
 }
 </style>
 </head>
 <body>
 <div id="app">
-  <!-- MAP -->
   <div id="map-wrap">
     <div id="map"></div>
     <div id="mode-bar">
@@ -350,31 +308,17 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
     </div>
     <div id="toast"></div>
     <div id="insert-hint"></div>
-    <div id="map-prov-bar">
-      <select id="map-prov-sel">
-        <option value="carto-light">CartoDB Light</option>
-        <option value="osm">OpenStreetMap</option>
-        <option value="carto-dark">CartoDB Dark</option>
-        <option value="esri">Esri Satellite</option>
-        <option value="yandex-map">Яндекс Карта</option>
-        <option value="yandex-sat">Яндекс Спутник</option>
-        <option value="yandex-hybrid">Яндекс Гибрид</option>
-      </select>
-    </div>
-    <!-- Mobile open panel button -->
     <button id="panel-toggle" onclick="toggleMobilePanel()">☰</button>
   </div>
 
-  <!-- PANEL -->
   <div id="panel">
     <div id="panel-header">
-      <h1>Brand New Subway</h1>
+      <h1>Simple Subway Map</h1>
       <button id="mobile-close-btn" onclick="toggleMobilePanel()">✕</button>
     </div>
 
     <div id="panel-scroll">
 
-      <!-- PRESETS -->
       <div class="p-section">
         <div class="p-title">Load Map</div>
         <button class="start-btn" onclick="startScratch()">✦ Start from scratch</button>
@@ -383,7 +327,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
         <button class="start-btn" onclick="loadPreset('nyc1967')">1967 Historical Map</button>
       </div>
 
-      <!-- LINES GRID -->
       <div id="lines-section">
         <div class="lines-row" id="row-ace"></div>
         <div class="lines-row" id="row-bdfm"></div>
@@ -396,6 +339,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
           <div id="extra-lines-row" class="lines-row"></div>
         </div>
         <button class="expand-btn" id="toggle-extra-btn" onclick="toggleExtra()">Show Additional Lines</button>
+        <button class="expand-btn" id="add-depot-btn" onclick="toggleDepotMode()">🏭 Add Depot</button>
         <button class="expand-btn" id="add-custom-btn" onclick="toggleCustomForm()">+ Add Custom Line</button>
         <div id="custom-line-form">
           <div class="ff"><label>Label (1–4 chars)</label><input type="text" id="cl-name" placeholder="e.g. X" maxlength="4"/></div>
@@ -410,7 +354,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
         </div>
       </div>
 
-      <!-- ACTIVE LINE CONTROLS -->
       <div id="controls-bar">
         <div id="ali">
           <div id="ali-dot"></div>
@@ -419,15 +362,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
             <button class="ali-btn" onclick="openEditLine()" title="Edit line">✎ Edit</button>
             <button class="ali-btn danger" onclick="deleteActiveLine()" title="Delete line">✕</button>
           </div>
-        </div>
-        <!-- Edit mode: Append vs Smart Insert -->
-        <div id="edit-mode-bar">
-          <button class="emode-btn active" id="emode-append" onclick="setEditMode('append')" title="New stations added to end of line">
-            &#x271A; Append <span style="font-size:8px;font-weight:400">(to end)</span>
-          </button>
-          <button class="emode-btn" id="emode-insert" onclick="setEditMode('insert')" title="Click near a segment to insert station at closest point">
-            &#x2295; Insert <span style="font-size:8px;font-weight:400">(smart)</span>
-          </button>
         </div>
         <div class="ctrl-row" style="margin-top:4px">
           <span class="ctrl-lbl">⟳ Circular / loop</span>
@@ -439,7 +373,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
         </div>
       </div>
 
-      <!-- ROUTE DIAGRAM + TRAINS -->
       <div id="route-section">
         <div id="route-header" onclick="toggleRouteDiagram()">
           <span id="rti">▶</span>&nbsp; Route Diagram
@@ -447,15 +380,14 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
         <div id="route-body">
           <div id="route-content"><div class="no-msg">Select a line to see its route.</div></div>
 
-          <!-- TRAINS -->
           <div id="train-section" style="display:none">
             <div class="train-section-title">🚇 Trains on this line</div>
             <div id="train-list"></div>
             <button id="new-train-btn" onclick="toggleNewTrainForm()">+ New Train</button>
             <div id="new-train-form" class="train-form" style="margin-top:5px">
               <div class="ff"><label>Model name</label><input type="text" id="nt-model" placeholder="e.g. R160A"/></div>
-              <div class="ff"><label>Total cars available</label><input type="number" id="nt-total" min="1" max="9999" value="60" placeholder="60"/></div>
-              <div class="ff"><label>Cars per train set</label><input type="number" id="nt-per" min="1" max="20" value="10" placeholder="10"/></div>
+              <div class="ff"><label>Total cars available</label><input type="number" id="nt-total" min="1" max="9999" value="60"/></div>
+              <div class="ff"><label>Cars per train set</label><input type="number" id="nt-per" min="1" max="20" value="10"/></div>
               <div style="font-size:10px;color:#666;margin-bottom:5px" id="nt-count-preview">→ 6 train sets</div>
               <div class="fa-row">
                 <button class="fb fb-ok" onclick="addTrain()">Add</button>
@@ -466,7 +398,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
         </div>
       </div>
 
-      <!-- SETTINGS -->
       <div id="settings-section">
         <div class="stitle">Appearance</div>
         <div class="srow">
@@ -485,7 +416,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
         </div>
         <div class="srow">
           <span class="slabel">Map tiles</span>
-          <select class="sselect" id="map-prov-sel2">
+          <select class="sselect" id="map-prov-sel2" onchange="switchTiles(this.value)">
             <option value="carto-light">CartoDB Light</option>
             <option value="osm">OpenStreetMap</option>
             <option value="carto-dark">CartoDB Dark</option>
@@ -497,7 +428,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
         </div>
       </div>
 
-      <!-- STATS -->
       <div id="stats-section">
         <div class="stat-row"><div class="stat-icon">💳</div><div><div class="stat-value">$2.90</div><div class="stat-label">Single-ride fare</div></div></div>
         <div class="stat-row"><div class="stat-icon">🧍</div><div><div class="stat-value" id="stat-riders">—</div><div class="stat-label">Avg weekday ridership</div></div></div>
@@ -505,7 +435,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
         <div class="stat-row"><div class="stat-icon">⭐</div><div><div class="stat-value" id="stat-rating">—</div><div class="stat-label">System rating</div></div></div>
       </div>
 
-    </div><!-- /panel-scroll -->
+    </div>
 
     <div id="bottom-btns">
       <button class="bottom-btn primary" onclick="saveToFile()">💾 Save</button>
@@ -516,19 +446,17 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
   </div>
 </div>
 
-<!-- ABOUT MODAL -->
 <div id="about-modal" class="modal-ov">
   <div class="modal-box">
-    <h2>Brand New Subway</h2>
+    <h2>Simple Subway Map</h2>
     <p>Design your ideal transit network. Select a line → click map to add stations → drag to move.</p>
-    <p><b>Multi-line stations:</b> Click station → tap badge row to add/remove lines.</p>
-    <p><b>Trains:</b> Select a line → open Route Diagram → click "New Train". Trains animate along the route.</p>
-    <p><b>Save/Load:</b> JSON files saved to your computer.</p>
+    <p><b>Insert mode:</b> clicking near a segment inserts the new station at the closest point on the line.</p>
+    <p><b>Depots:</b> click "🏭 Add Depot", then click map. Click the depot → attach it to line+station.</p>
+    <p><b>Trains:</b> select a line → Route Diagram → "New Train". Trains animate along the route.</p>
     <button class="mbtn" onclick="closeAbout()">Close</button>
   </div>
 </div>
 
-<!-- EDIT LINE MODAL -->
 <div id="edit-line-modal" class="modal-ov">
   <div class="modal-box">
     <h2>Edit Line</h2>
@@ -545,10 +473,21 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
   </div>
 </div>
 
+<div id="edit-train-modal" class="modal-ov">
+  <div class="modal-box">
+    <h2>Edit Train</h2>
+    <div class="ff"><label>Model name</label><input type="text" id="et-model"/></div>
+    <div class="ff"><label>Total cars available</label><input type="number" id="et-total" min="1" max="9999"/></div>
+    <div class="ff"><label>Cars per train set</label><input type="number" id="et-per" min="1" max="20"/></div>
+    <div style="font-size:10px;color:#666;margin-bottom:6px" id="et-count-preview">→ 6 train sets</div>
+    <div class="fa-row">
+      <button class="fb fb-ok" onclick="saveEditTrain()">Save</button>
+      <button class="fb fb-cancel" onclick="closeEditTrain()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ═══════════════════════════════════════════════════════════
-// PALETTE
-// ═══════════════════════════════════════════════════════════
 const C={
   BLUE:'#2850AD',ORANGE:'#FF6319',GREEN:'#6CBE45',BROWN:'#996633',
   GREY:'#A7A9AC',YELLOW:'#FCCC0A',SGREY:'#808183',RED:'#EE352E',
@@ -556,9 +495,6 @@ const C={
   TEAL:'#00838A',MAROON:'#8B0000',NAVY:'#003580',
 };
 
-// ═══════════════════════════════════════════════════════════
-// LINE DEFINITIONS
-// ═══════════════════════════════════════════════════════════
 const NYC_LINES=[
   {id:'A', label:'A', bg:C.BLUE,   fg:'#fff',row:'ace', title:'A Train – 8th Ave Express'},
   {id:'C', label:'C', bg:C.BLUE,   fg:'#fff',row:'ace', title:'C Train – 8th Ave Local'},
@@ -592,7 +528,6 @@ const NYC_LINES=[
   {id:'JFK',label:'✈',bg:C.YELLOW,fg:'#000',row:'4567',title:'JFK AirTrain'},
 ];
 
-// Extra lines — 8,10,12 = DGREEN (like 4,5,6); 9,13 = RED (like 1,2,3); 11 = PURPLE (like 7)
 const EXTRA_LINES=[
   {id:'T',  label:'T',  bg:C.LTBLUE,fg:'#fff',title:'T – 2nd Ave Subway'},
   {id:'BQX',label:'BQX',bg:'#556',  fg:'#fff',title:'BQX – Brooklyn–Queens Connector'},
@@ -619,27 +554,22 @@ const MAP_PROVIDERS={
   ],opts:{attribution:'© Яндекс',maxZoom:19}},
 };
 
-// ═══════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════
 let map,currentTile=null,hybridLayers=[];
 let activeLineId=null;
-let lines={};    // id → {id,label,bg,fg,title,stations:[],circular,smooth,polylines:[],custom,trains:[]}
-let stations={};  // id → {id,latlng,name,borough,ridership,lineIds:[],marker}
+let lines={};
+let stations={};
+let depots={};
+let depotMode=false;
 let extraVisible=false;
 let routeOpen=false;
 let dragState=null;
-let editMode="append"; // "append" | "insert"
 let insertPreviewLine=null;
-let hoverInsertInfo=null; // {lineId, insertAfterIndex}
-// Trains: {id, lineId, model, totalCars, carsPerSet, count, running, markers:[], progress:[], direction:[]}
+let hoverInsertInfo=null;
 let trainAnimFrame=null;
+let editingTrain=null;
 
 const genId=()=>'_'+Math.random().toString(36).substr(2,9);
 
-// ═══════════════════════════════════════════════════════════
-// MAP INIT
-// ═══════════════════════════════════════════════════════════
 function initMap(){
   map=L.map('map',{center:[40.728,-73.944],zoom:12,zoomControl:true});
   switchTiles('carto-light');
@@ -647,12 +577,6 @@ function initMap(){
   map.on('mousemove',onMouseMove);
   map.on('mouseup',onMouseUp);
   map.on('mouseout',onMapMouseOut);
-
-  const s1=document.getElementById('map-prov-sel');
-  const s2=document.getElementById('map-prov-sel2');
-  function ch(v){switchTiles(v);s1.value=v;s2.value=v;}
-  s1.addEventListener('change',e=>ch(e.target.value));
-  s2.addEventListener('change',e=>ch(e.target.value));
 }
 
 function switchTiles(key){
@@ -663,31 +587,19 @@ function switchTiles(key){
   else{currentTile=L.tileLayer(p.url,p.opts);currentTile.addTo(map);}
 }
 
-// ═══════════════════════════════════════════════════════════
-// FONT
-// ═══════════════════════════════════════════════════════════
 function changeFont(v){
   document.documentElement.style.setProperty('--font',v);
 }
 
-// ═══════════════════════════════════════════════════════════
-// MOBILE PANEL
-// ═══════════════════════════════════════════════════════════
 function toggleMobilePanel(){
   document.getElementById('panel').classList.toggle('mobile-open');
 }
 
-// ═══════════════════════════════════════════════════════════
-// ENSURE LINE DATA
-// ═══════════════════════════════════════════════════════════
 function ensureLine(def){
   if(!lines[def.id])
     lines[def.id]={...def,stations:[],circular:false,smooth:false,polylines:[],custom:false,trains:[]};
 }
 
-// ═══════════════════════════════════════════════════════════
-// BUILD PANEL
-// ═══════════════════════════════════════════════════════════
 function buildLinesPanel(){
   const ROWS={ace:'row-ace',bdfm:'row-bdfm',gjzl:'row-gjzl',nqrw:'row-nqrw',s123:'row-s123','4567':'row-4567'};
   Object.values(ROWS).forEach(id=>document.getElementById(id).innerHTML='');
@@ -710,17 +622,14 @@ function makeBtn(def){
   if(def.dimmed)btn.style.opacity='0.65';
   btn.textContent=line.label||def.label;
   btn.title=line.title||def.title||def.label;
-  // train indicator dot
   const dot=document.createElement('div');dot.className='train-dot';btn.appendChild(dot);
   if(!def.disabled)btn.addEventListener('click',()=>selectLine(def.id));
   return btn;
 }
 
-// ═══════════════════════════════════════════════════════════
-// SELECT / DESELECT
-// ═══════════════════════════════════════════════════════════
 function selectLine(id){
   clearInsertPreview();
+  if(depotMode)toggleDepotMode(false);
   activeLineId=id;
   buildLinesPanel();
   updateControlsBar();
@@ -747,12 +656,25 @@ function updateControlsBar(){
   document.getElementById('smooth-chk').checked=l.smooth||false;
 }
 
-function toggleCircular(v){if(!activeLineId)return;lines[activeLineId].circular=v;redrawLine(lines[activeLineId]);updateRouteDiagram();}
-function toggleSmooth(v){if(!activeLineId)return;lines[activeLineId].smooth=v;redrawLine(lines[activeLineId]);}
+function toggleCircular(v){
+  if(!activeLineId)return;
+  lines[activeLineId].circular=v;
+  redrawLine(lines[activeLineId]);
+  updateRouteDiagram();
+  Object.values(depots).forEach(dp=>{
+    if(dp.connections.some(c=>c.lineId===activeLineId))redrawDepotConnections(dp);
+  });
+}
 
-// ═══════════════════════════════════════════════════════════
-// EDIT / DELETE LINE
-// ═══════════════════════════════════════════════════════════
+function toggleSmooth(v){
+  if(!activeLineId)return;
+  lines[activeLineId].smooth=v;
+  redrawLine(lines[activeLineId]);
+  Object.values(depots).forEach(dp=>{
+    if(dp.connections.some(c=>c.lineId===activeLineId))redrawDepotConnections(dp);
+  });
+}
+
 function openEditLine(){
   if(!activeLineId)return;
   const l=lines[activeLineId];
@@ -766,11 +688,10 @@ function closeEditLine(){document.getElementById('edit-line-modal').classList.re
 function saveEditLine(){
   if(!activeLineId)return;
   const l=lines[activeLineId];
-  const newLabel=document.getElementById('el-label').value.trim()||l.label;
-  const newTitle=document.getElementById('el-title').value.trim();
-  const newBg=document.getElementById('el-bg').value;
-  const newFg=document.getElementById('el-fg').value;
-  l.label=newLabel;l.title=newTitle;l.bg=newBg;l.fg=newFg;
+  l.label=document.getElementById('el-label').value.trim()||l.label;
+  l.title=document.getElementById('el-title').value.trim();
+  l.bg=document.getElementById('el-bg').value;
+  l.fg=document.getElementById('el-fg').value;
   l.stations.forEach(sid=>{const st=stations[sid];if(st)refreshMarker(st);});
   redrawLine(l);
   buildLinesPanel();updateControlsBar();closeEditLine();
@@ -782,6 +703,7 @@ function deleteActiveLine(){
   const l=lines[activeLineId];
   if(!confirm('Delete line "'+l.label+'"?'))return;
   stopAllTrainsOnLine(activeLineId);
+  cleanupDepotConnections(c=>c.lineId===activeLineId);
   l.stations.forEach(sid=>{
     const st=stations[sid];if(!st)return;
     st.lineIds=st.lineIds.filter(lid=>lid!==activeLineId);
@@ -795,167 +717,89 @@ function deleteActiveLine(){
   showToast('Line deleted.');
 }
 
-// ═══════════════════════════════════════════════════════════
-// EDIT MODE
-// ═══════════════════════════════════════════════════════════
-function setEditMode(mode){
-  editMode=mode;
-  document.getElementById('emode-append').classList.toggle('active', mode==='append');
-  document.getElementById('emode-insert').classList.toggle('active', mode==='insert');
-  clearInsertPreview();
-  updateModeLabel();
-}
+function mDist(a,b){return L.latLng(a).distanceTo(L.latLng(b));}
 
-// ─── Geometry helpers ────────────────────────────────────────
-// Project point P onto segment AB, return {t, point:[lat,lng], dist}
-function projectOnSegment(A, B, P){
-  const ax=A[1],ay=A[0],bx=B[1],by=B[0],px=P[1],py=P[0];
-  const dx=bx-ax, dy=by-ay;
-  const lenSq=dx*dx+dy*dy;
-  let t = lenSq===0 ? 0 : ((px-ax)*dx+(py-ay)*dy)/lenSq;
-  t=Math.max(0,Math.min(1,t));
-  const qx=ax+t*dx, qy=ay+t*dy;
-  const d=Math.sqrt((px-qx)*(px-qx)+(py-qy)*(py-qy));
-  return {t, point:[qy,qx], dist:d};
-}
-
-// ── Leaflet-based distance in metres between two latlng arrays ──
-function mDist(a, b){
-  return L.latLng(a).distanceTo(L.latLng(b));
-}
-
-// Project point P onto segment AB using real metric distances.
-// Returns {t, dist_m} where dist_m is perpendicular distance in metres.
-function projectOnSegmentM(A, B, P){
-  // Convert to flat pixel-space via Leaflet CRS for correct projection
-  const crs = L.CRS.EPSG3857;
-  const zA = crs.latLngToPoint(L.latLng(A), 13);
-  const zB = crs.latLngToPoint(L.latLng(B), 13);
-  const zP = crs.latLngToPoint(L.latLng(P), 13);
+function projectOnSegmentM(A,B,P){
+  const crs=L.CRS.EPSG3857;
+  const zA=crs.latLngToPoint(L.latLng(A),13);
+  const zB=crs.latLngToPoint(L.latLng(B),13);
+  const zP=crs.latLngToPoint(L.latLng(P),13);
   const dx=zB.x-zA.x, dy=zB.y-zA.y;
   const lenSq=dx*dx+dy*dy;
-  let t = lenSq===0 ? 0 : ((zP.x-zA.x)*dx+(zP.y-zA.y)*dy)/lenSq;
+  let t=lenSq===0?0:((zP.x-zA.x)*dx+(zP.y-zA.y)*dy)/lenSq;
   t=Math.max(0,Math.min(1,t));
   const qx=zA.x+t*dx, qy=zA.y+t*dy;
-  const qLL = crs.pointToLatLng({x:qx, y:qy}, 13);
-  const dist_m = L.latLng(P).distanceTo(qLL);
-  return {t, dist_m, projLL: qLL};
+  const qLL=crs.pointToLatLng({x:qx,y:qy},13);
+  return {t, dist_m:L.latLng(P).distanceTo(qLL), projLL:qLL};
 }
 
-// Find which segment (or end) of line is closest to latlng.
-// Returns {insertAfterIndex}:
-//   -1  → prepend before station[0]
-//   i   → insert between station[i] and station[i+1]
-//   sids.length-1 → append after last station
 function findClosestSegment(line, latlng){
   const sids=line.stations;
-  if(sids.length===0) return {insertAfterIndex: -1};
-  if(sids.length===1) return {insertAfterIndex: 0};
-
-  const P=[latlng.lat, latlng.lng];
-
-  // ── Step 1: find closest segment (perpendicular projection, clamped to endpoints) ──
-  const segCount = line.circular ? sids.length : sids.length-1;
-  let bestSegDist=Infinity, bestSegIdx=0, bestT=0;
-
+  if(sids.length===0) return {insertAfterIndex:-1};
+  if(sids.length===1) return {insertAfterIndex:0};
+  const P=[latlng.lat,latlng.lng];
+  const segCount=line.circular?sids.length:sids.length-1;
+  let bestSegDist=Infinity,bestSegIdx=0,bestT=0;
   for(let i=0;i<segCount;i++){
     const a=stations[sids[i]];
     const b=stations[sids[(i+1)%sids.length]];
-    if(!a||!b) continue;
-    const res=projectOnSegmentM(a.latlng, b.latlng, P);
-    if(res.dist_m < bestSegDist){
-      bestSegDist=res.dist_m;
-      bestSegIdx=i;
-      bestT=res.t;
-    }
+    if(!a||!b)continue;
+    const res=projectOnSegmentM(a.latlng,b.latlng,P);
+    if(res.dist_m<bestSegDist){bestSegDist=res.dist_m;bestSegIdx=i;bestT=res.t;}
   }
-
-  // ── Step 2 (non-circular only): check if click is "outside" the line endpoints ──
-  // If the best projection hit an endpoint (t≈0 or t≈1 on the end segments),
-  // compare real distance to the endpoint vs. to the next interior segment.
-  // This ensures clicks beyond the first or last station extend the line outward.
   if(!line.circular){
     const first=stations[sids[0]];
     const last=stations[sids[sids.length-1]];
-    if(first && last){
-      const dFirst = mDist(P, first.latlng);
-      const dLast  = mDist(P, last.latlng);
-
-      // Build a "beyond-endpoint" score: how much the click extends past the end
-      // We compare dist-to-endpoint against the best segment dist.
-      // If the nearest segment endpoint IS the first or last station (t≈0 on first seg
-      // or t≈1 on last seg), the point is "outside" the line.
-      const onFirstSeg = bestSegIdx===0 && bestT < 0.15;
-      const onLastSeg  = bestSegIdx===sids.length-2 && bestT > 0.85;
-
-      if(onFirstSeg || onLastSeg){
-        // Pick whichever end is closer
-        if(dFirst <= dLast){
-          // Prepend
-          return {insertAfterIndex: -1};
-        } else {
-          // Append after last
-          return {insertAfterIndex: sids.length-1};
-        }
+    if(first&&last){
+      const dFirst=mDist(P,first.latlng);
+      const dLast=mDist(P,last.latlng);
+      const onFirstSeg=bestSegIdx===0&&bestT<0.15;
+      const onLastSeg=bestSegIdx===sids.length-2&&bestT>0.85;
+      if(onFirstSeg||onLastSeg){
+        if(dFirst<=dLast)return {insertAfterIndex:-1};
+        else return {insertAfterIndex:sids.length-1};
       }
-
-      // Even if not on an end segment, if the click is closer to an endpoint
-      // than to any segment midpoint, snap to that end.
-      const endThreshold = bestSegDist * 0.7; // 70% of best segment dist
-      if(dFirst < endThreshold && dFirst <= dLast){
-        return {insertAfterIndex: -1};
-      }
-      if(dLast < endThreshold && dLast < dFirst){
-        return {insertAfterIndex: sids.length-1};
-      }
+      const endThreshold=bestSegDist*0.7;
+      if(dFirst<endThreshold&&dFirst<=dLast)return {insertAfterIndex:-1};
+      if(dLast<endThreshold&&dLast<dFirst)return {insertAfterIndex:sids.length-1};
     }
   }
-
-  return {insertAfterIndex: bestSegIdx};
+  return {insertAfterIndex:bestSegIdx};
 }
 
 function clearInsertPreview(){
   if(insertPreviewLine){map.removeLayer(insertPreviewLine);insertPreviewLine=null;}
   hoverInsertInfo=null;
   const hint=document.getElementById('insert-hint');
-  if(hint) hint.style.display='none';
+  if(hint)hint.style.display='none';
 }
 
-// ─── MAP CLICK → ADD STATION ─────────────────────────────────
 function onMapClick(e){
-  if(!activeLineId)return;
   if(dragState&&dragState.moved){dragState=null;return;}
+
+  if(depotMode){
+    createDepot(e.latlng);
+    return;
+  }
+
+  if(!activeLineId)return;
   const line=lines[activeLineId];if(!line)return;
 
   const latlng=[e.latlng.lat,e.latlng.lng];
   const sid=genId();
-  const totalOnLine=line.stations.length;
   const st={
-    id:sid, latlng,
+    id:sid,latlng,
     name:'Station '+(Object.keys(stations).length+1),
     borough:boroughOf(e.latlng),
     ridership:Math.floor(Math.random()*7000)+600,
-    lineIds:[activeLineId], marker:null
+    lineIds:[activeLineId],marker:null
   };
   stations[sid]=st;
 
-  if(editMode==='append' || totalOnLine<2){
-    // Always append: push to end
-    line.stations.push(sid);
-  } else {
-    // Smart Insert: find closest segment or endpoint
-    const {insertAfterIndex} = findClosestSegment(line, e.latlng);
-    if(insertAfterIndex===-1){
-      // Prepend before first station
-      line.stations.unshift(sid);
-    } else if(insertAfterIndex >= line.stations.length-1){
-      // Append after last station
-      line.stations.push(sid);
-    } else {
-      // Insert after insertAfterIndex (between two existing stations)
-      line.stations.splice(insertAfterIndex+1, 0, sid);
-    }
-  }
+  const {insertAfterIndex}=findClosestSegment(line,e.latlng);
+  if(insertAfterIndex===-1)line.stations.unshift(sid);
+  else if(insertAfterIndex>=line.stations.length-1)line.stations.push(sid);
+  else line.stations.splice(insertAfterIndex+1,0,sid);
 
   clearInsertPreview();
   createMarker(st);
@@ -972,9 +816,6 @@ function boroughOf(ll){
   return 'Manhattan';
 }
 
-// ═══════════════════════════════════════════════════════════
-// MARKERS
-// ═══════════════════════════════════════════════════════════
 function createMarker(st){
   const el=document.createElement('div');el.className='sdot';styleMarkerEl(el,st);
   const icon=L.divIcon({html:el,className:'',iconSize:[13,13],iconAnchor:[6,6]});
@@ -993,45 +834,46 @@ function refreshMarker(st){
   const d=el.querySelector('.sdot');if(d)styleMarkerEl(d,st);
 }
 
-// ═══════════════════════════════════════════════════════════
-// DRAG + INSERT HOVER PREVIEW
-// ═══════════════════════════════════════════════════════════
 function onMouseMove(e){
-  // Dragging a station
   if(dragState){
     dragState.moved=true;
+    if(dragState.depotId){
+      const dp=depots[dragState.depotId];if(!dp)return;
+      dp.latlng=[e.latlng.lat,e.latlng.lng];
+      dp.marker.setLatLng(e.latlng);
+      redrawDepotConnections(dp);
+      return;
+    }
     const st=stations[dragState.sid];if(!st)return;
     st.latlng=[e.latlng.lat,e.latlng.lng];
     st.marker.setLatLng(e.latlng);
     st.lineIds.forEach(lid=>{if(lines[lid])redrawLine(lines[lid]);});
+    Object.values(depots).forEach(dp=>{
+      if(dp.connections.some(c=>c.stationId===dragState.sid))redrawDepotConnections(dp);
+    });
     return;
   }
 
-  // Insert mode preview
-  if(editMode!=='insert'||!activeLineId) return;
+  if(!activeLineId||depotMode)return;
   const line=lines[activeLineId];
-  if(!line||line.stations.length<2) return;
+  if(!line||line.stations.length<2)return;
 
-  const {insertAfterIndex} = findClosestSegment(line, e.latlng);
+  const {insertAfterIndex}=findClosestSegment(line,e.latlng);
   hoverInsertInfo={insertAfterIndex};
 
-  // Draw dashed preview segments showing where station will be inserted
   if(insertPreviewLine){map.removeLayer(insertPreviewLine);insertPreviewLine=null;}
 
   const sids=line.stations;
   const lastIdx=sids.length-1;
-  let prevSid=null, nextSid=null, hintText='';
+  let prevSid=null,nextSid=null,hintText='';
 
   if(insertAfterIndex===-1){
-    // Will prepend -> link from click to first station
     nextSid=sids[0];
     hintText='Add before: '+(stations[nextSid]?stations[nextSid].name:'first station');
   } else if(insertAfterIndex>=lastIdx){
-    // Will append -> link from last station to click
     prevSid=sids[lastIdx];
     hintText='Add after: '+(stations[prevSid]?stations[prevSid].name:'last station');
   } else {
-    // Will insert between two existing stations
     prevSid=sids[insertAfterIndex];
     nextSid=sids[insertAfterIndex+1];
     const aName=stations[prevSid]?stations[prevSid].name:'?';
@@ -1040,25 +882,24 @@ function onMouseMove(e){
   }
 
   const pts=[];
-  if(prevSid&&stations[prevSid]) pts.push(stations[prevSid].latlng);
-  pts.push([e.latlng.lat, e.latlng.lng]);
-  if(nextSid&&stations[nextSid]) pts.push(stations[nextSid].latlng);
+  if(prevSid&&stations[prevSid])pts.push(stations[prevSid].latlng);
+  pts.push([e.latlng.lat,e.latlng.lng]);
+  if(nextSid&&stations[nextSid])pts.push(stations[nextSid].latlng);
 
   if(pts.length>=2){
     insertPreviewLine=L.polyline(pts,{
-      color:line.bg, weight:4, opacity:0.65,
-      dashArray:'7 5', lineJoin:'round', lineCap:'round'
+      color:line.bg,weight:4,opacity:0.65,
+      dashArray:'7 5',lineJoin:'round',lineCap:'round'
     });
     insertPreviewLine.addTo(map);
   }
 
-  // Floating hint near cursor
   const hint=document.getElementById('insert-hint');
   if(hint){
-    const containerPt=map.latLngToContainerPoint(e.latlng);
+    const cp=map.latLngToContainerPoint(e.latlng);
     hint.style.display='block';
-    hint.style.left=containerPt.x+'px';
-    hint.style.top=containerPt.y+'px';
+    hint.style.left=cp.x+'px';
+    hint.style.top=cp.y+'px';
     hint.textContent=hintText;
   }
 }
@@ -1066,15 +907,10 @@ function onMouseMove(e){
 function onMouseUp(){
   if(dragState){setTimeout(()=>{dragState=null;},60);map.dragging.enable();}
 }
-
-// Clear insert preview when leaving map
 function onMapMouseOut(){
-  if(editMode==='insert') clearInsertPreview();
+  clearInsertPreview();
 }
 
-// ═══════════════════════════════════════════════════════════
-// POPUP — multi-line
-// ═══════════════════════════════════════════════════════════
 function openPopup(sid){
   const st=stations[sid];if(!st)return;
   map.closePopup();
@@ -1108,7 +944,7 @@ function openPopup(sid){
         st.lineIds=st.lineIds.filter(x=>x!==lid);
         const line=lines[lid];
         if(line){line.stations=line.stations.filter(s=>s!==sid);redrawLine(line);}
-        if(st.lineIds.length===0){if(st.marker)map.removeLayer(st.marker);delete stations[sid];map.closePopup();updateStats();return;}
+        if(st.lineIds.length===0){if(st.marker)map.removeLayer(st.marker);delete stations[sid];cleanupDepotConnections(c=>c.stationId===sid);map.closePopup();updateStats();return;}
         refreshMarker(st);rebuildBadges();rebuildAdd();updateRouteDiagram();updateStats();
       });
       wrap2.appendChild(rm);linesRow.appendChild(wrap2);
@@ -1154,12 +990,216 @@ function deleteStation(sid){
   const st=stations[sid];if(!st)return;
   if(st.marker)map.removeLayer(st.marker);
   st.lineIds.forEach(lid=>{const l=lines[lid];if(!l)return;l.stations=l.stations.filter(s=>s!==sid);redrawLine(l);});
-  delete stations[sid];updateRouteDiagram();updateStats();
+  delete stations[sid];
+  cleanupDepotConnections(c=>c.stationId===sid);
+  updateRouteDiagram();updateStats();
 }
 
-// ═══════════════════════════════════════════════════════════
-// POLYLINES + CATMULL-ROM
-// ═══════════════════════════════════════════════════════════
+function toggleDepotMode(force){
+  depotMode=(typeof force==='boolean')?force:!depotMode;
+  if(depotMode)deselectLine();
+  const btn=document.getElementById('add-depot-btn');
+  btn.classList.toggle('depot-active',depotMode);
+  btn.textContent=depotMode?'🏭 Click map to place depot (click to cancel)':'🏭 Add Depot';
+  updateModeLabel();
+}
+
+function createDepot(latlng){
+  const id=genId();
+  const dp={
+    id,
+    latlng:[latlng.lat,latlng.lng],
+    name:'Depot '+(Object.keys(depots).length+1),
+    connections:[],
+    marker:null,
+    connLines:[]
+  };
+  depots[id]=dp;
+  createDepotMarker(dp);
+  toggleDepotMode(false);
+  openDepotPopup(id);
+  showToast('Depot added. Click it to add connections.');
+}
+
+function createDepotMarker(dp){
+  const el=document.createElement('div');
+  el.className='depot-marker';
+  el.textContent='🏭';
+  el.title=dp.name;
+  const icon=L.divIcon({html:el,className:'',iconSize:[32,32],iconAnchor:[16,16]});
+  const m=L.marker(dp.latlng,{icon,draggable:false,zIndexOffset:400});
+  m.on('click',ev=>{L.DomEvent.stopPropagation(ev);if(dragState&&dragState.moved)return;openDepotPopup(dp.id);});
+  m.on('mousedown',ev=>{L.DomEvent.stopPropagation(ev);dragState={sid:null,depotId:dp.id,moved:false};map.dragging.disable();});
+  m.addTo(map);
+  dp.marker=m;
+}
+
+// Depot connections — solid GREY line.
+// Smooth mode: bend to the OPPOSITE side of the straight line.
+function redrawDepotConnections(dp){
+  dp.connLines.forEach(l=>map.removeLayer(l));
+  dp.connLines=[];
+  dp.connections.forEach(c=>{
+    const st=stations[c.stationId];
+    const line=lines[c.lineId];
+    if(!st||!line)return;
+    let path;
+    if(line.smooth){
+      const dlat=st.latlng[0]-dp.latlng[0];
+      const dlng=st.latlng[1]-dp.latlng[1];
+      const len=Math.sqrt(dlat*dlat+dlng*dlng)||1;
+      const mid=[(dp.latlng[0]+st.latlng[0])/2,(dp.latlng[1]+st.latlng[1])/2];
+      const off=len*0.10;
+      // Flipped: was (-dlng/len, +dlat/len), now (dlng/len, -dlat/len)
+      const bend=[mid[0]+(dlng/len)*off, mid[1]-(dlat/len)*off];
+      path=catmullRom([dp.latlng,bend,st.latlng],false,14);
+    } else {
+      path=[dp.latlng,st.latlng];
+    }
+    const pl=L.polyline(path,{
+      color:'#666',weight:3,opacity:0.85,lineJoin:'round',lineCap:'round'
+    });
+    pl.addTo(map);
+    dp.connLines.push(pl);
+  });
+}
+
+function cleanupDepotConnections(predicate){
+  Object.values(depots).forEach(dp=>{
+    const before=dp.connections.length;
+    dp.connections=dp.connections.filter(c=>!predicate(c));
+    if(dp.connections.length!==before)redrawDepotConnections(dp);
+  });
+}
+
+function openDepotPopup(dpid){
+  const dp=depots[dpid];if(!dp)return;
+  map.closePopup();
+  const wrap=document.createElement('div');wrap.className='popup';
+
+  const head=document.createElement('div');head.className='pp-head';
+  const nameEl=document.createElement('div');nameEl.className='pp-name';
+  nameEl.contentEditable='true';nameEl.textContent=dp.name;
+  nameEl.addEventListener('blur',()=>{
+    dp.name=nameEl.textContent.trim()||dp.name;
+    nameEl.textContent=dp.name;
+    if(dp.marker){const el=dp.marker.getElement();if(el){const d=el.querySelector('.depot-marker');if(d)d.title=dp.name;}}
+  });
+  nameEl.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();nameEl.blur();}});
+  const px=document.createElement('div');px.className='pp-x';px.innerHTML='&times;';
+  px.addEventListener('click',()=>map.closePopup());
+  head.append(nameEl,px);
+
+  const sub=document.createElement('div');sub.className='pp-sub';
+  sub.textContent='🏭 Depot';
+
+  const connList=document.createElement('div');
+  connList.style.cssText='padding:6px 11px;border-bottom:1px solid #1a1a1a';
+  const connTitle=document.createElement('div');
+  connTitle.style.cssText='font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px';
+  connTitle.textContent='Connections';
+  connList.appendChild(connTitle);
+
+  function rebuildConnList(){
+    while(connList.children.length>1)connList.removeChild(connList.lastChild);
+    if(dp.connections.length===0){
+      const empty=document.createElement('div');
+      empty.style.cssText='font-size:10px;color:#555;font-style:italic';
+      empty.textContent='No connections yet';
+      connList.appendChild(empty);
+      return;
+    }
+    dp.connections.forEach((c,idx)=>{
+      const line=lines[c.lineId];const st=stations[c.stationId];
+      if(!line||!st)return;
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px';
+      const b=document.createElement('div');
+      b.style.cssText=`width:18px;height:18px;border-radius:50%;background:${line.bg};color:${line.fg};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0`;
+      b.textContent=line.label;
+      const nm=document.createElement('span');
+      nm.style.cssText='flex:1;color:#bbb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      nm.textContent=st.name;
+      const del=document.createElement('button');
+      del.textContent='×';
+      del.style.cssText='background:none;border:1px solid #5a1a1a;color:#f66;border-radius:3px;padding:0 5px;cursor:pointer;font-size:11px;font-family:var(--font)';
+      del.addEventListener('click',()=>{
+        dp.connections.splice(idx,1);
+        redrawDepotConnections(dp);
+        rebuildConnList();
+      });
+      row.append(b,nm,del);
+      connList.appendChild(row);
+    });
+  }
+  rebuildConnList();
+
+  const addArea=document.createElement('div');addArea.className='pp-add';
+  const addLabel=document.createElement('div');addLabel.className='pp-add-label';addLabel.textContent='Add connection:';
+  addArea.appendChild(addLabel);
+
+  const selLine=document.createElement('select');
+  selLine.className='sselect';selLine.style.cssText='width:100%;margin-bottom:4px;font-size:11px;max-width:none';
+  const selSt=document.createElement('select');
+  selSt.className='sselect';selSt.style.cssText='width:100%;margin-bottom:5px;font-size:11px;max-width:none';
+
+  function refreshLineSelect(){
+    selLine.innerHTML='';
+    const avail=Object.values(lines).filter(l=>l.stations.length>0);
+    if(avail.length===0){
+      const o=document.createElement('option');o.textContent='— no lines with stations —';o.value='';
+      selLine.appendChild(o);
+    }
+    avail.forEach(l=>{
+      const o=document.createElement('option');
+      o.value=l.id;o.textContent=l.label+' — '+(l.title||l.label);
+      selLine.appendChild(o);
+    });
+  }
+  function refreshStationSelect(){
+    selSt.innerHTML='';
+    const l=lines[selLine.value];if(!l)return;
+    l.stations.forEach(sid=>{
+      const st=stations[sid];if(!st)return;
+      const o=document.createElement('option');o.value=sid;o.textContent=st.name;
+      selSt.appendChild(o);
+    });
+  }
+  selLine.addEventListener('change',refreshStationSelect);
+  refreshLineSelect();
+  refreshStationSelect();
+
+  const addBtn=document.createElement('button');
+  addBtn.textContent='+ Add Connection';
+  addBtn.style.cssText='width:100%;padding:5px;background:#1e3a1e;border:1px solid #2a5a2a;color:#8f8;border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font)';
+  addBtn.addEventListener('click',()=>{
+    const lid=selLine.value;const sid=selSt.value;
+    if(!lid||!sid)return;
+    if(dp.connections.some(c=>c.lineId===lid&&c.stationId===sid)){showToast('Already connected');return;}
+    dp.connections.push({lineId:lid,stationId:sid});
+    redrawDepotConnections(dp);
+    rebuildConnList();
+  });
+
+  addArea.append(selLine,selSt,addBtn);
+
+  const acts=document.createElement('div');acts.className='pp-actions';
+  const delBtn=document.createElement('button');
+  delBtn.className='pp-btn pp-del';delBtn.textContent='Delete Depot';
+  delBtn.addEventListener('click',()=>{deleteDepot(dpid);map.closePopup();});
+  acts.appendChild(delBtn);
+
+  wrap.append(head,sub,connList,addArea,acts);
+  L.popup({maxWidth:290,closeButton:false,autoClose:true}).setLatLng(dp.latlng).setContent(wrap).openOn(map);
+}
+
+function deleteDepot(dpid){
+  const dp=depots[dpid];if(!dp)return;
+  dp.connLines.forEach(l=>map.removeLayer(l));
+  if(dp.marker)map.removeLayer(dp.marker);
+  delete depots[dpid];
+}
+
 function catmullRom(pts,closed,steps=14){
   if(pts.length<2)return pts;
   const ext=closed?[pts[pts.length-1],...pts,pts[0],pts[1]]:[pts[0],...pts,pts[pts.length-1]];
@@ -1191,19 +1231,18 @@ function redrawLine(line){
   line.polylines=[glow,main];
 }
 
-// Build interpolated path (flat array of [lat,lng]) for train animation
+// Denser path for smoother train interpolation: 25 m steps (was 50 m)
 function buildLinePath(line){
   if(line.stations.length<2)return[];
   let pts=line.stations.map(sid=>{const st=stations[sid];return st?st.latlng:null;}).filter(Boolean);
   if(pts.length<2)return[];
   const closed=line.circular&&pts.length>2;
   if(closed)pts=[...pts,pts[0]];
-  if(line.smooth)return catmullRom(closed?pts.slice(0,-1):pts,closed,20);
-  // dense linear interpolation for smooth movement even without curves
+  if(line.smooth)return catmullRom(closed?pts.slice(0,-1):pts,closed,24);
   const out=[];
   for(let i=0;i<pts.length-1;i++){
     const a=pts[i],b=pts[i+1];
-    const steps=Math.max(10,Math.round(L.latLng(a).distanceTo(L.latLng(b))/50));
+    const steps=Math.max(16,Math.round(L.latLng(a).distanceTo(L.latLng(b))/25));
     for(let s=0;s<steps;s++){
       const t=s/steps;
       out.push([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]);
@@ -1213,11 +1252,17 @@ function buildLinePath(line){
   return out;
 }
 
-// ═══════════════════════════════════════════════════════════
-// TRAINS
-// ═══════════════════════════════════════════════════════════
-// train = {id, lineId, model, totalCars, carsPerSet, count, running, markers:[], progress:[], directions:[]}
-// progress[i] = float 0..1 along the path
+// helper for smooth marker placement between two path points
+function posOnPath(path, t){
+  if(path.length<2)return path[0];
+  const total=path.length-1;
+  const fp=Math.max(0,Math.min(1,t))*total;
+  const i0=Math.floor(fp);
+  const i1=Math.min(i0+1,total);
+  const f=fp-i0;
+  const a=path[i0],b=path[i1];
+  return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f];
+}
 
 function toggleNewTrainForm(){
   const f=document.getElementById('new-train-form');
@@ -1233,6 +1278,12 @@ function updateTrainCountPreview(){
 }
 document.addEventListener('input',e=>{
   if(e.target.id==='nt-total'||e.target.id==='nt-per')updateTrainCountPreview();
+  if(e.target.id==='et-total'||e.target.id==='et-per'){
+    const total=parseInt(document.getElementById('et-total').value)||0;
+    const per=parseInt(document.getElementById('et-per').value)||1;
+    const count=Math.floor(total/Math.max(1,per));
+    document.getElementById('et-count-preview').textContent='→ '+count+' train set'+(count!==1?'s':'');
+  }
 });
 
 function addTrain(){
@@ -1245,7 +1296,6 @@ function addTrain(){
 
   const tid=genId();
   const train={id:tid,lineId:activeLineId,model,totalCars:total,carsPerSet:per,count,running:true,markers:[],progress:[],directions:[]};
-  // Distribute trains evenly along path 0..1
   for(let i=0;i<count;i++){
     train.progress.push(i/count);
     train.directions.push(1);
@@ -1267,8 +1317,8 @@ function spawnTrainMarkers(train,line){
   const path=buildLinePath(line);
   if(!path.length)return;
   for(let i=0;i<train.count;i++){
-    const idx=Math.floor(train.progress[i]*(path.length-1));
-    const pos=L.latLng(path[Math.min(idx,path.length-1)]);
+    const posArr=posOnPath(path,train.progress[i]);
+    const pos=L.latLng(posArr);
     const size=12;
     const el=document.createElement('div');
     el.className='train-marker';
@@ -1281,8 +1331,7 @@ function spawnTrainMarkers(train,line){
   }
 }
 
-// Animation loop
-const TRAIN_SPEED=0.00008; // fraction of path per ms
+const TRAIN_SPEED=0.00001;
 let lastAnimTime=null;
 
 function startAnimLoop(){
@@ -1295,11 +1344,9 @@ function startAnimLoop(){
   }
   trainAnimFrame=requestAnimationFrame(loop);
 }
-
 function stopAnimLoop(){
   if(trainAnimFrame){cancelAnimationFrame(trainAnimFrame);trainAnimFrame=null;}
 }
-
 function anyTrainRunning(){
   return Object.values(lines).some(l=>l.trains&&l.trains.some(t=>t.running));
 }
@@ -1321,8 +1368,9 @@ function animateTrains(dt){
         } else if(train.progress[i]<=0){
           train.directions[i]=1;train.progress[i]=0;
         }
-        const idx=Math.min(Math.floor(train.progress[i]*(path.length-1)),path.length-1);
-        if(train.markers[i])train.markers[i].setLatLng(L.latLng(path[idx]));
+        // Smooth interpolation between adjacent path points
+        const arr=posOnPath(path, train.progress[i]);
+        if(train.markers[i])train.markers[i].setLatLng(L.latLng(arr));
       }
     });
   });
@@ -1359,9 +1407,56 @@ function setTrainRunning(lineId,trainId,running){
   buildLinesPanel();updateTrainList();updateStatTrains();
 }
 
-// ═══════════════════════════════════════════════════════════
-// ROUTE DIAGRAM + TRAIN LIST
-// ═══════════════════════════════════════════════════════════
+function openEditTrain(lineId,trainId){
+  const line=lines[lineId];if(!line)return;
+  const train=line.trains.find(t=>t.id===trainId);if(!train)return;
+  editingTrain={lineId,trainId};
+  document.getElementById('et-model').value=train.model;
+  document.getElementById('et-total').value=train.totalCars;
+  document.getElementById('et-per').value=train.carsPerSet;
+  const total=train.totalCars, per=train.carsPerSet;
+  const count=Math.floor(total/Math.max(1,per));
+  document.getElementById('et-count-preview').textContent='→ '+count+' train set'+(count!==1?'s':'');
+  document.getElementById('edit-train-modal').classList.add('open');
+}
+function closeEditTrain(){
+  document.getElementById('edit-train-modal').classList.remove('open');
+  editingTrain=null;
+}
+function saveEditTrain(){
+  if(!editingTrain)return;
+  const {lineId,trainId}=editingTrain;
+  const line=lines[lineId];if(!line)return;
+  const train=line.trains.find(t=>t.id===trainId);if(!train)return;
+
+  const model=document.getElementById('et-model').value.trim()||train.model;
+  const total=Math.max(1,parseInt(document.getElementById('et-total').value)||train.totalCars);
+  const per=Math.max(1,parseInt(document.getElementById('et-per').value)||train.carsPerSet);
+  const newCount=Math.max(1,Math.floor(total/Math.max(1,per)));
+
+  train.model=model;
+  train.totalCars=total;
+  train.carsPerSet=per;
+
+  if(newCount!==train.count){
+    train.count=newCount;
+    const newProg=[],newDir=[];
+    for(let i=0;i<newCount;i++){newProg.push(i/newCount);newDir.push(1);}
+    train.progress=newProg;
+    train.directions=newDir;
+    if(train.running){
+      spawnTrainMarkers(train,line);
+      startAnimLoop();
+    }
+  }
+  buildLinesPanel();updateTrainList();
+  closeEditTrain();
+  showToast('Train updated');
+}
+document.getElementById('edit-train-modal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('edit-train-modal'))closeEditTrain();
+});
+
 function toggleRouteDiagram(){
   routeOpen=!routeOpen;
   document.getElementById('route-body').className=routeOpen?'open':'';
@@ -1376,18 +1471,44 @@ function updateRouteDiagram(){
   if(!line||!line.stations.length){body.innerHTML='<div class="no-msg">No stations on this line yet.</div>';trainSec.style.display='block';updateTrainList();return;}
   body.innerHTML='';
   const sids=line.circular?[...line.stations,line.stations[0]]:line.stations;
+
   sids.forEach((sid,i)=>{
     const st=stations[sid];if(!st)return;
-    if(i>0){const seg=document.createElement('div');seg.style.cssText=`width:3px;height:12px;background:${line.bg};margin-left:9px;border-radius:2px;opacity:.8`;body.appendChild(seg);}
-    const row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:7px;cursor:pointer';
+    if(i>0){
+      const seg=document.createElement('div');
+      seg.className='route-line';
+      seg.style.background=line.bg;
+      body.appendChild(seg);
+    }
+    const row=document.createElement('div');
+    row.className='route-item';
+    row.style.cursor='pointer';
     row.addEventListener('click',()=>map.setView(st.latlng,14));
-    const dot=document.createElement('div');dot.style.cssText=`width:9px;height:9px;border-radius:50%;border:2px solid ${line.bg};background:#fff;flex-shrink:0`;
-    const name=document.createElement('span');name.style.cssText='font-size:11px;color:#bbb';
+
+    const dot=document.createElement('div');
+    dot.className='route-dot';
+    dot.style.borderColor=line.bg;
     const isReturn=line.circular&&i===sids.length-1;
+    if(st.lineIds.length>1){
+      dot.style.width='13px';
+      dot.style.height='13px';
+      dot.style.marginLeft='-1px';
+    }
+
+    const name=document.createElement('span');
+    name.className='route-name';
     name.textContent=st.name+(isReturn?' ↩':'')+(st.lineIds.length>1?' ⇄':'');
-    row.append(dot,name);body.appendChild(row);
+
+    row.append(dot,name);
+    body.appendChild(row);
   });
-  if(line.circular){const n=document.createElement('div');n.style.cssText='font-size:9px;color:#b080c0;text-align:center;margin-top:3px';n.textContent='⟳ Circular line';body.appendChild(n);}
+
+  if(line.circular){
+    const n=document.createElement('div');
+    n.style.cssText='font-size:9px;color:#b080c0;text-align:center;margin-top:3px';
+    n.textContent='⟳ Circular line';
+    body.appendChild(n);
+  }
   trainSec.style.display='block';
   updateTrainList();
 }
@@ -1409,6 +1530,13 @@ function updateTrainList(){
     sub.textContent=train.count+' sets · '+train.carsPerSet+' cars/set · '+(train.running?'🟢 Running':'🔴 Stopped');
     info.append(nm,sub);
     const btns=document.createElement('div');btns.className='train-item-btns';
+
+    const editBtn=document.createElement('button');
+    editBtn.className='ti-btn edit';editBtn.textContent='✎';
+    editBtn.title='Edit train';
+    editBtn.addEventListener('click',()=>openEditTrain(train.lineId,train.id));
+    btns.appendChild(editBtn);
+
     if(train.running){
       const stopBtn=document.createElement('button');stopBtn.className='ti-btn stop';stopBtn.textContent='Stop';
       stopBtn.addEventListener('click',()=>setTrainRunning(train.lineId,train.id,false));
@@ -1426,9 +1554,6 @@ function updateTrainList(){
   updateStatTrains();
 }
 
-// ═══════════════════════════════════════════════════════════
-// STATS
-// ═══════════════════════════════════════════════════════════
 function updateStats(){
   const n=Object.keys(stations).length;
   const riders=n*3400;
@@ -1443,9 +1568,6 @@ function updateStatTrains(){
   document.getElementById('stat-trains').textContent=total;
 }
 
-// ═══════════════════════════════════════════════════════════
-// EXTRA / CUSTOM
-// ═══════════════════════════════════════════════════════════
 function toggleExtra(){
   extraVisible=!extraVisible;
   document.getElementById('extra-lines-wrap').style.display=extraVisible?'block':'none';
@@ -1467,11 +1589,13 @@ function addCustomLine(){
   document.getElementById('custom-line-form').style.display='none';
 }
 
-// ═══════════════════════════════════════════════════════════
-// CLEAR ALL
-// ═══════════════════════════════════════════════════════════
 function clearAll(){
   stopAnimLoop();
+  Object.values(depots).forEach(dp=>{
+    dp.connLines.forEach(l=>map.removeLayer(l));
+    if(dp.marker)map.removeLayer(dp.marker);
+  });
+  depots={};
   Object.values(lines).forEach(l=>{
     l.trains.forEach(t=>{t.markers.forEach(m=>map.removeLayer(m));});
     l.trains=[];l.polylines.forEach(p=>map.removeLayer(p));l.stations=[];l.polylines=[];
@@ -1485,9 +1609,6 @@ function startScratch(){
   clearAll();map.setView([40.728,-73.944],12);
 }
 
-// ═══════════════════════════════════════════════════════════
-// BULK ADD helper — supports [[lat,lng,name,[extraLineIds]], ...]
-// ═══════════════════════════════════════════════════════════
 function bulk(lineId,defs){
   const line=lines[lineId];if(!line)return;
   defs.forEach(([lat,lng,name,...rest])=>{
@@ -1503,12 +1624,8 @@ function bulk(lineId,defs){
   redrawLine(line);
 }
 
-// ═══════════════════════════════════════════════════════════
-// PRESETS
-// ═══════════════════════════════════════════════════════════
 function loadPreset(name){
   clearAll();
-
   if(name==='nyc2024'){
     map.setView([40.728,-73.944],11);
     bulk('A',[[40.8681,-73.9208,'207 St'],[40.8577,-73.9265,'Dyckman St'],[40.8513,-73.9321,'190 St'],[40.8431,-73.9393,'181 St'],[40.8244,-73.9432,'175 St'],[40.8160,-73.9499,'168 St'],[40.8037,-73.9535,'145 St'],[40.7988,-73.9535,'125 St'],[40.7907,-73.9724,'59 St–Columbus Cir',['C','E']],[40.7549,-73.9997,'42 St–Port Auth',['C','E']],[40.7449,-74.0039,'34 St–Penn Station',['C','E']],[40.7407,-74.0074,'23 St'],[40.7284,-74.0104,'14 St',['C']],[40.7132,-74.0128,'Canal St'],[40.7028,-74.0156,'Fulton St',['C','E']],[40.6920,-74.0167,'High St'],[40.6748,-73.9978,'Howard Beach'],[40.6650,-73.9900,'Ozone Park–Lefferts Blvd']]);
@@ -1528,7 +1645,6 @@ function loadPreset(name){
     bulk('SI',[[40.6439,-74.0757,'St. George'],[40.6130,-74.0830,'Clifton'],[40.5710,-74.1260,'Grant City'],[40.5380,-74.1580,'Great Kills'],[40.4720,-74.2220,'Tottenville']]);
     Object.values(lines).forEach(l=>{if(l.stations.length>=2)redrawLine(l);});
     updateStats();showToast('2024 NYC Map — '+Object.keys(stations).length+' stations');
-
   } else if(name==='vignelli'){
     map.setView([40.720,-73.960],11);
     bulk('A',[[40.880,-73.965,'207 St'],[40.860,-73.965,'190 St'],[40.840,-73.965,'181 St'],[40.820,-73.965,'168 St'],[40.800,-73.965,'145 St'],[40.780,-73.965,'125 St'],[40.757,-73.990,'59 St',['C']],[40.750,-73.990,'42 St–Port Auth',['C','E']],[40.740,-73.990,'34 St',['C','E']],[40.727,-73.990,'14 St',['C']],[40.712,-73.990,'Canal St'],[40.700,-73.990,'Fulton St',['C','E']],[40.690,-73.990,'High St']]);
@@ -1547,10 +1663,8 @@ function loadPreset(name){
     bulk('SI',[[40.643,-74.074,'St. George'],[40.563,-74.134,'Grant City'],[40.480,-74.214,'Tottenville']]);
     Object.values(lines).forEach(l=>{if(l.stations.length>=2)redrawLine(l);});
     updateStats();showToast('1972 Vignelli Map — '+Object.keys(stations).length+' stations');
-
   } else if(name==='nyc1967'){
     map.setView([40.728,-73.944],11);
-    // Historical lines for 1967
     const hist=[
       {id:'AA',label:'AA',bg:C.BLUE,  fg:'#fff',title:'AA – 8th Ave Shuttle (hist.)'},
       {id:'BB',label:'BB',bg:C.ORANGE,fg:'#fff',title:'BB – 6th Ave Local (hist.)'},
@@ -1564,7 +1678,6 @@ function loadPreset(name){
       {id:'9', label:'9', bg:C.RED,   fg:'#fff',title:'9 – 7th Ave Skip-Stop (disc. 2005)'},
     ];
     hist.forEach(def=>{if(!lines[def.id])lines[def.id]={...def,stations:[],circular:false,smooth:false,polylines:[],custom:true,trains:[]};});
-
     bulk('A',[[40.880,-73.965,'207 St'],[40.860,-73.965,'190 St'],[40.820,-73.965,'168 St'],[40.800,-73.965,'145 St'],[40.780,-73.965,'125 St'],[40.757,-73.990,'59 St',['CC']],[40.750,-73.990,'42 St',['CC','EE']],[40.740,-73.990,'34 St',['CC','EE']],[40.727,-73.990,'14 St',['CC']],[40.712,-73.990,'Canal St'],[40.700,-73.990,'Fulton St',['CC','EE']],[40.690,-73.990,'High St']]);
     bulk('CC',[[40.820,-73.965,'168 St'],[40.800,-73.965,'145 St'],[40.780,-73.965,'125 St'],[40.757,-73.990,'59 St'],[40.750,-73.990,'42 St'],[40.740,-73.990,'34 St'],[40.727,-73.990,'14 St'],[40.712,-73.990,'Canal St'],[40.700,-73.990,'Fulton St']]);
     bulk('BB',[[40.875,-73.890,'Bedford Pk Blvd'],[40.800,-73.960,'145 St'],[40.780,-73.960,'125 St'],[40.757,-73.985,'59 St'],[40.750,-73.990,'42 St'],[40.740,-73.990,'34 St',['D','RR','KK']],[40.712,-73.985,'Grand St'],[40.689,-73.985,'Atlantic Av',['D','RR','KK','2','3','4','5']],[40.640,-73.980,'Coney Island',['D']]]);
@@ -1581,22 +1694,19 @@ function loadPreset(name){
     bulk('7',[[40.742,-73.830,'Flushing–Main St'],[40.748,-73.950,'Queensboro Plaza',['KK']],[40.754,-73.994,'Times Sq',['1','2','3','9','KK','RR','A','CC','EE','S1']]]);
     bulk('S1',[[40.754,-73.994,'Times Sq',['1','2','3','9','7','KK','RR']],[40.752,-73.977,'Grand Central',['4','5','6','7']]]);
     bulk('SI',[[40.643,-74.074,'St. George'],[40.563,-74.134,'Grant City'],[40.480,-74.214,'Tottenville']]);
-
     if(!extraVisible)toggleExtra();
     Object.values(lines).forEach(l=>{if(l.stations.length>=2)redrawLine(l);});
     updateStats();showToast('1967 Historical Map — '+Object.keys(stations).length+' stations');
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// SAVE / LOAD JSON
-// ═══════════════════════════════════════════════════════════
 function saveToFile(){
   const data={
-    version:3,savedAt:new Date().toISOString(),
+    version:4,savedAt:new Date().toISOString(),
     stations:Object.values(stations).map(s=>({id:s.id,latlng:s.latlng,name:s.name,borough:s.borough,ridership:s.ridership,lineIds:s.lineIds})),
     lineStates:Object.fromEntries(Object.entries(lines).map(([k,v])=>[k,{stations:v.stations,circular:v.circular||false,smooth:v.smooth||false,trains:v.trains.map(t=>({id:t.id,model:t.model,totalCars:t.totalCars,carsPerSet:t.carsPerSet,count:t.count,running:false}))}])),
     customLines:Object.values(lines).filter(l=>l.custom).map(l=>({id:l.id,label:l.label,title:l.title||l.label,bg:l.bg,fg:l.fg})),
+    depots:Object.values(depots).map(d=>({id:d.id,latlng:d.latlng,name:d.name,connections:d.connections})),
     settings:{font:document.getElementById('font-select').value}
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
@@ -1620,6 +1730,12 @@ function handleFileLoad(evt){
       });
       (data.stations||[]).forEach(sd=>{const st={...sd,marker:null};stations[sd.id]=st;createMarker(st);});
       Object.entries(data.lineStates||{}).forEach(([lid,ls])=>{if(lines[lid])lines[lid].stations=(ls.stations||[]).filter(sid=>stations[sid]);});
+      (data.depots||[]).forEach(dd=>{
+        const dp={id:dd.id,latlng:dd.latlng,name:dd.name,connections:dd.connections||[],marker:null,connLines:[]};
+        depots[dd.id]=dp;
+        createDepotMarker(dp);
+        redrawDepotConnections(dp);
+      });
       Object.values(lines).forEach(l=>{if(l.stations.length>=2)redrawLine(l);});
       if(data.settings&&data.settings.font){const fs=document.getElementById('font-select');if(fs){fs.value=data.settings.font;changeFont(data.settings.font);}}
       buildLinesPanel();updateStats();showToast('✓ Loaded — '+Object.keys(stations).length+' stations');
@@ -1628,15 +1744,13 @@ function handleFileLoad(evt){
   r.readAsText(file);evt.target.value='';
 }
 
-// ═══════════════════════════════════════════════════════════
-// MISC
-// ═══════════════════════════════════════════════════════════
 function updateModeLabel(){
   const el=document.getElementById('mode-label');
-  if(activeLineId){
+  if(depotMode){
+    el.textContent='🏭 Depot mode — click map to place a depot (click button again to cancel)';
+  } else if(activeLineId){
     const l=lines[activeLineId];
-    const modeStr = editMode==='insert' ? ' [Insert mode: click near a segment]' : ' [Append mode: click to add to end]';
-    el.textContent='Line '+l.label+' selected —'+modeStr;
+    el.textContent='Line '+l.label+' selected — click map to insert stations';
   } else {
     el.textContent='Select a line, then click the map to add stations';
   }
@@ -1651,11 +1765,15 @@ function closeAbout(){document.getElementById('about-modal').classList.remove('o
 
 document.getElementById('about-modal').addEventListener('click',e=>{if(e.target===document.getElementById('about-modal'))closeAbout();});
 document.getElementById('edit-line-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-line-modal'))closeEditLine();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){clearInsertPreview();deselectLine();map.closePopup();}});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    clearInsertPreview();
+    if(depotMode)toggleDepotMode(false);
+    deselectLine();
+    map.closePopup();
+  }
+});
 
-// ═══════════════════════════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════════════════════════
 initMap();
 [...NYC_LINES,...EXTRA_LINES].forEach(ensureLine);
 buildLinesPanel();updateStats();updateModeLabel();
