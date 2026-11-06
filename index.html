@@ -1,302 +1,176 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <title>Simple Subway Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Source+Code+Pro:wght@400;700&family=Bebas+Neue&family=Nunito:wght@400;700&family=Montserrat:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
-@font-face{font-family:'Moscow Sans';src:url('https://raw.githubusercontent.com/nicothin/MoscowSans/main/fonts/MoscowSans-Regular.woff2') format('woff2');font-weight:400}
-@font-face{font-family:'Moscow Sans';src:url('https://raw.githubusercontent.com/nicothin/MoscowSans/main/fonts/MoscowSans-Bold.woff2') format('woff2');font-weight:700}
-
-:root{
-  --font:'Helvetica Neue',Helvetica,Arial,sans-serif;
-  --panel-w:320px;
-}
+:root{--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;--panel-w:320px;--bg-main:#e8e8e8;--panel-bg:#ffffff;--panel-bg-alt:#f7f7f7;--panel-header-bg:#fafafa;--border:#e0e0e0;--border-soft:#eee;--text:#1a1a1a;--text-secondary:#666;--text-tertiary:#999;--accent:#0066cc;--accent-hover:#0052a3;--accent-soft:#e3f2fd;--danger:#cc0000;--danger-soft:#ffebee;--success:#2e7d32;--success-soft:#e8f5e9;--warning:#e65100;--warning-soft:#fff3e0;--shadow:0 1px 3px rgba(0,0,0,.08);--popup-bg:#fff;--input-bg:#fff;--switch-off:#ccc;--switch-knob:#fff;--map-bg:#e8e8e8}
+[data-theme="dark"]{--bg-main:#1a1a1a;--panel-bg:#222;--panel-bg-alt:#2a2a2a;--panel-header-bg:#1e1e1e;--border:#3a3a3a;--border-soft:#2e2e2e;--text:#eee;--text-secondary:#999;--text-tertiary:#666;--accent:#4a9eff;--accent-hover:#3a8eef;--accent-soft:#1a3a5a;--danger:#f66;--danger-soft:#5a2020;--success:#6d6;--success-soft:#1e3a1e;--warning:#fa4;--warning-soft:#5a3a1a;--shadow:0 1px 3px rgba(0,0,0,.4);--popup-bg:#2a2a2a;--input-bg:#1a1a1a;--switch-off:#444;--switch-knob:#ccc;--map-bg:#1a1a1a}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a;color:#eee}
+html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg-main);color:var(--text)}
 #app{display:flex;height:100vh;width:100vw;position:relative}
 #map-wrap{flex:1;position:relative;overflow:hidden;min-width:0}
 #map{width:100%;height:100%}
-
-#panel{
-  width:var(--panel-w);flex-shrink:0;
-  background:#222;color:#eee;
-  display:flex;flex-direction:column;
-  overflow:hidden;border-left:1px solid #3a3a3a;
-  z-index:400;transition:transform .3s ease;
-}
+#panel{width:var(--panel-w);flex-shrink:0;background:var(--panel-bg);display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--border);z-index:400;box-shadow:var(--shadow)}
 #panel-scroll{flex:1;overflow-y:auto;overflow-x:hidden}
-#panel-scroll::-webkit-scrollbar{width:3px}
-#panel-scroll::-webkit-scrollbar-thumb{background:#444;border-radius:2px}
-
-.p-section{padding:8px 12px;border-bottom:1px solid #333}
-.p-title{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:#555;margin-bottom:6px;font-weight:600}
-
-#panel-header{
-  display:flex;align-items:center;gap:8px;
-  padding:10px 12px;border-bottom:1px solid #333;background:#1e1e1e;flex-shrink:0
-}
-#panel-header h1{font-size:17px;font-weight:700;color:#fff;flex:1;font-family:var(--font)}
-#mobile-close-btn{display:none;background:none;border:none;color:#888;font-size:20px;cursor:pointer;padding:0 2px;line-height:1}
-
-.start-btn{
-  display:block;width:100%;background:#2a2a2a;border:1px solid #444;color:#ccc;
-  padding:7px 10px;border-radius:5px;cursor:pointer;font-size:12px;text-align:left;
-  margin-bottom:4px;transition:background .15s;font-family:var(--font)
-}
-.start-btn:hover{background:#333}
-
-#lines-section{padding:8px 10px 6px;border-bottom:1px solid #333}
-.lines-row{display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap}
-.line-btn{
-  width:36px;height:36px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-weight:700;font-size:12px;cursor:pointer;
-  border:2px solid transparent;
-  transition:transform .12s,box-shadow .12s,border-color .12s;
-  user-select:none;flex-shrink:0;font-family:var(--font);
-  position:relative;
-}
-.line-btn:hover{transform:scale(1.12);box-shadow:0 2px 8px rgba(0,0,0,.6)}
-.line-btn.active{border-color:#fff!important;transform:scale(1.18);box-shadow:0 0 0 3px rgba(255,255,255,.15)}
-.line-btn.disabled{opacity:0.22;cursor:not-allowed}
-.line-btn.disabled:hover{transform:none;box-shadow:none}
-.line-btn .train-dot{
-  position:absolute;bottom:-2px;right:-2px;
-  width:8px;height:8px;border-radius:50%;
-  background:#4f4;border:1px solid #111;
-  display:none;
-}
+#panel-scroll::-webkit-scrollbar{width:4px}
+#panel-scroll::-webkit-scrollbar-thumb{background:#888;border-radius:2px}
+.p-section{padding:10px 14px;border-bottom:1px solid var(--border)}
+.p-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-secondary);margin-bottom:8px;font-weight:600}
+#panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--panel-header-bg);flex-shrink:0}
+#panel-header h1{font-size:16px;font-weight:600;flex:1}
+#mobile-close-btn{display:none;background:none;border:none;color:var(--text-secondary);font-size:20px;cursor:pointer;padding:0 2px;line-height:1}
+#lines-section{padding:10px 12px 8px;border-bottom:1px solid var(--border)}
+.lines-row{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.line-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;cursor:pointer;border:2px solid transparent;transition:transform .15s,box-shadow .15s;user-select:none;flex-shrink:0;position:relative;box-shadow:var(--shadow)}
+.line-btn:hover{transform:scale(1.08)}
+.line-btn.active{border-color:var(--text)!important;transform:scale(1.12);box-shadow:0 0 0 3px var(--accent-soft)}
+.line-btn .train-dot{position:absolute;bottom:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:#34c759;border:1px solid #fff;display:none}
 .line-btn.has-trains .train-dot{display:block}
-
-#extra-lines-wrap{display:none;margin-bottom:4px}
-#extra-lines-row{display:flex;gap:4px;flex-wrap:wrap}
-
-.expand-btn{
-  width:100%;background:#2a2a2a;border:1px solid #444;color:#999;
-  padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11px;
-  text-align:left;margin-bottom:4px;transition:background .15s;font-family:var(--font)
-}
-.expand-btn:hover{background:#333}
-.expand-btn.depot-active{background:#5a3a1a;border-color:#a86a2a;color:#fd8}
-
-#custom-line-form{display:none;padding:8px;background:#1a1a1a;border-radius:5px;border:1px solid #333;margin-top:4px}
-.ff{margin-bottom:6px}
-.ff label{display:block;font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
-.ff input[type=text],.ff input[type=number]{width:100%;background:#252525;border:1px solid #444;color:#eee;padding:5px 8px;border-radius:4px;font-size:12px;outline:none;font-family:var(--font)}
-.ff input:focus{border-color:#666}
-.cpair{display:flex;gap:6px}
+.expand-btn{width:100%;background:var(--panel-bg);border:1px solid var(--border);color:var(--text-secondary);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;text-align:left;margin-bottom:4px;transition:background .15s;font-family:var(--font);box-shadow:var(--shadow)}
+.expand-btn:hover{background:var(--panel-bg-alt)}
+.expand-btn.depot-active{background:var(--warning-soft);border-color:var(--warning);color:var(--warning)}
+#custom-line-form{display:none;padding:10px;background:var(--panel-bg-alt);border-radius:6px;border:1px solid var(--border);margin-top:6px}
+.ff{margin-bottom:8px}
+.ff label{display:block;font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.ff input[type=text],.ff input[type=number]{width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-size:13px;outline:none;font-family:var(--font)}
+.ff input:focus{border-color:var(--accent)}
+.cpair{display:flex;gap:8px}
 .cpick{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
-.cpick label{font-size:9px;color:#666}
-.cpick input[type=color]{width:100%;height:26px;border:1px solid #444;border-radius:3px;cursor:pointer;padding:2px;background:#252525}
-.fa-row{display:flex;gap:5px;margin-top:6px}
-.fb{flex:1;padding:5px 0;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--font)}
-.fb:hover{opacity:.85}
-.fb-ok{background:#3a5a8a;color:#adf}
-.fb-cancel{background:#3a3a3a;color:#aaa}
-
-#controls-bar{display:none;background:#1e1e1e;padding:8px 12px;border-bottom:1px solid #333}
-#controls-bar.visible{display:flex;flex-direction:column;gap:5px}
-#ali{display:flex;align-items:center;gap:7px;margin-bottom:3px}
-#ali-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
-#ali-label{font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ali-btns{display:flex;gap:3px}
-.ali-btn{padding:3px 7px;background:#2a2a2a;border:1px solid #444;color:#ccc;border-radius:3px;cursor:pointer;font-size:10px;font-family:var(--font)}
-.ali-btn:hover{background:#333}
-.ali-btn.danger{border-color:#5a2a2a;color:#f88}
-.ali-btn.danger:hover{background:#5a2a2a}
-
+.cpick label{font-size:10px;color:var(--text-secondary)}
+.cpick input[type=color]{width:100%;height:28px;border:1px solid var(--border);border-radius:4px;cursor:pointer;padding:2px}
+.fa-row{display:flex;gap:6px;margin-top:8px}
+.fb{flex:1;padding:6px 0;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font)}
+.fb-ok{background:var(--accent);color:#fff}
+.fb-cancel{background:var(--border);color:var(--text-secondary)}
+#controls-bar{display:none;background:var(--panel-bg-alt);padding:10px 14px;border-bottom:1px solid var(--border)}
+#controls-bar.visible{display:flex;flex-direction:column;gap:6px}
+#ali{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+#ali-dot{width:14px;height:14px;border-radius:50%}
+#ali-label{font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ali-btns{display:flex;gap:4px}
+.ali-btn{padding:4px 8px;background:var(--panel-bg);border:1px solid var(--border);color:var(--text);border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font)}
+.ali-btn.danger{border-color:var(--danger);color:var(--danger)}
 .ctrl-row{display:flex;align-items:center;justify-content:space-between}
-.ctrl-lbl{font-size:11px;color:#aaa}
-.sw{position:relative;width:34px;height:18px;display:inline-block}
+.ctrl-lbl{font-size:12px;color:var(--text-secondary)}
+.sw{position:relative;width:36px;height:20px;display:inline-block}
 .sw input{display:none}
-.sw-track{position:absolute;inset:0;background:#333;border-radius:9px;cursor:pointer;transition:background .2s}
-.sw-track::after{content:'';position:absolute;width:12px;height:12px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s}
-.sw input:checked+.sw-track{background:#3a6a9a}
+.sw-track{position:absolute;inset:0;background:var(--switch-off);border-radius:10px;cursor:pointer;transition:background .2s}
+.sw-track::after{content:'';position:absolute;width:14px;height:14px;background:var(--switch-knob);border-radius:50%;top:3px;left:3px;transition:transform .2s}
+.sw input:checked+.sw-track{background:var(--accent)}
 .sw input:checked+.sw-track::after{transform:translateX(16px)}
-
-#route-section{border-bottom:1px solid #333}
-#route-header{display:flex;align-items:center;gap:5px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:600;color:#ccc;user-select:none}
-#route-header:hover{background:#2a2a2a}
-#rti{font-size:8px;color:#666;transition:transform .2s;display:inline-block}
+#edit-mode-bar{display:flex;gap:4px;margin-top:4px}
+.emode-btn{flex:1;padding:5px;background:var(--panel-bg);border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font)}
+.emode-btn.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+#route-section{border-bottom:1px solid var(--border)}
+#route-header{display:flex;align-items:center;gap:6px;padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;user-select:none}
+#route-header:hover{background:var(--panel-bg-alt)}
+#rti{font-size:9px;color:var(--text-secondary);transition:transform .2s;display:inline-block}
 #rti.open{transform:rotate(90deg)}
-#route-body{display:none;padding:4px 12px 10px;max-height:340px;overflow-y:auto}
+#route-body{display:none;padding:6px 14px 12px;max-height:340px;overflow-y:auto}
 #route-body.open{display:block}
-.no-msg{font-size:11px;color:#555;font-style:italic;padding:3px 0}
-
+.no-msg{font-size:12px;color:var(--text-tertiary);font-style:italic;padding:4px 0}
 .route-item{display:flex;align-items:center;gap:0}
-.route-dot{
-  width:11px;height:11px;border-radius:50%;background:#fff;
-  border:2.5px solid #888;flex-shrink:0;box-sizing:border-box;
-}
-.route-line{
-  width:3px;height:14px;border-radius:2px;opacity:.85;
-  margin-left:4px;
-  flex-shrink:0;
-}
-.route-name{font-size:11px;color:#bbb;margin-left:7px}
-
-#train-section{margin-top:8px;border-top:1px solid #2a2a2a;padding-top:8px}
-.train-section-title{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px}
-.train-form{background:#1a1a1a;border:1px solid #2e2e2e;border-radius:5px;padding:8px;margin-bottom:6px}
-#train-list{display:flex;flex-direction:column;gap:4px;margin-bottom:5px}
-.train-item{
-  display:flex;align-items:center;gap:6px;
-  background:#1e1e1e;border:1px solid #2e2e2e;border-radius:4px;
-  padding:5px 8px;font-size:11px;
-}
-.train-item-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 4px currentColor}
+.route-dot{width:12px;height:12px;border-radius:50%;background:var(--panel-bg);border:2.5px solid #888;flex-shrink:0;box-sizing:border-box}
+.route-line{width:3px;height:14px;border-radius:2px;opacity:.85;margin-left:4px;flex-shrink:0}
+.route-name{font-size:12px;margin-left:8px}
+#train-section{display:none;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--panel-bg)}
+#train-section.visible{display:block}
+.train-section-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-secondary);margin-bottom:6px}
+.train-form{background:var(--panel-bg-alt);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px}
+#train-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.train-item{display:flex;align-items:center;gap:8px;background:var(--panel-bg-alt);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px}
+.train-item-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .train-item-info{flex:1;overflow:hidden}
-.train-item-name{font-weight:600;color:#ddd;font-size:11px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
-.train-item-sub{font-size:9px;color:#666}
-.train-item-btns{display:flex;gap:3px}
-.ti-btn{padding:2px 6px;background:#2a2a2a;border:1px solid #3a3a3a;border-radius:3px;cursor:pointer;font-size:10px;color:#aaa;font-family:var(--font)}
-.ti-btn:hover{background:#333}
-.ti-btn.stop{border-color:#5a3a1a;color:#fa8}
-.ti-btn.stop:hover{background:#5a3a1a}
-.ti-btn.del{border-color:#5a1a1a;color:#f66}
-.ti-btn.del:hover{background:#5a1a1a}
-.ti-btn.run{border-color:#1a4a1a;color:#6f6}
-.ti-btn.run:hover{background:#1a4a1a}
-.ti-btn.edit{border-color:#1a3a5a;color:#8cf}
-.ti-btn.edit:hover{background:#1a3a5a}
-.ti-btn.move{border-color:#5a3a7a;color:#b9f}
-.ti-btn.move:hover{background:#3a2a5a}
-#new-train-btn{
-  width:100%;padding:5px;background:#1e3a1e;border:1px solid #2a5a2a;color:#8f8;
-  border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font)
-}
-#new-train-btn:hover{background:#2a4a2a}
+.train-item-name{font-weight:600;font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.train-item-sub{font-size:10px;color:var(--text-secondary)}
+.train-item-btns{display:flex;gap:4px}
+.ti-btn{padding:3px 8px;background:var(--panel-bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:11px;color:var(--text);font-family:var(--font)}
+.ti-btn.stop{border-color:var(--warning);color:var(--warning)}
+.ti-btn.del{border-color:var(--danger);color:var(--danger)}
+.ti-btn.run{border-color:var(--success);color:var(--success)}
+.ti-btn.edit{border-color:var(--accent);color:var(--accent)}
+.ti-btn.move{border-color:#ce93d8;color:#8e24aa}
+[data-theme="dark"] .ti-btn.move{border-color:#6a2a8a;color:#d4a0e8}
+#new-train-btn,#new-freight-btn{flex:1;padding:6px;background:var(--success-soft);border:1px solid var(--success);color:var(--success);border-radius:4px;cursor:pointer;font-size:12px;font-family:var(--font)}
+#new-freight-btn{background:#f3e5f5;border-color:#9b59b6;color:#9b59b6}
 #new-train-form{display:none}
-
-#settings-section{padding:8px 12px;border-bottom:1px solid #333}
-.stitle{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:5px}
-.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.slabel{font-size:11px;color:#aaa}
-.sselect{background:#252525;border:1px solid #444;color:#ddd;padding:3px 6px;border-radius:4px;font-size:11px;cursor:pointer;outline:none;max-width:160px;font-family:var(--font)}
-
-#stats-section{padding:8px 12px;border-bottom:1px solid #333}
-.stat-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.train-table-wrap{margin-bottom:10px;overflow-x:auto;border:1px solid var(--border);border-radius:6px}
+.train-table{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--font)}
+.train-table th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-secondary);font-weight:600;background:var(--panel-bg-alt)}
+.train-table td{padding:5px 8px;border-bottom:1px solid var(--border-soft)}
+.train-table tr:last-child td{border-bottom:none}
+#settings-section{padding:10px 14px;border-bottom:1px solid var(--border)}
+.stitle{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-secondary);margin-bottom:6px}
+.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.slabel{font-size:12px}
+.sselect{background:var(--input-bg);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-size:12px;cursor:pointer;outline:none;max-width:160px;font-family:var(--font)}
+#stats-section{padding:10px 14px;border-bottom:1px solid var(--border)}
+.stat-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .stat-row:last-child{margin-bottom:0}
-.stat-icon{font-size:16px;opacity:.6;width:20px;text-align:center}
-.stat-value{font-size:18px;font-weight:700;color:#fff;line-height:1;font-family:var(--font)}
-.stat-label{font-size:10px;color:#666;margin-top:1px}
-
-#bottom-btns{display:flex;gap:5px;padding:8px 10px;border-top:1px solid #333;flex-shrink:0;background:#1a1a1a}
-.bottom-btn{flex:1;padding:7px 4px;background:#2a2a2a;border:1px solid #444;color:#ccc;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;transition:background .15s;font-family:var(--font);white-space:nowrap}
-.bottom-btn:hover{background:#333}
-.bottom-btn.primary{background:#1e3a5a;border-color:#3a6a9a;color:#8ad}
-.bottom-btn.primary:hover{background:#2a4a6a}
-
-.leaflet-container{background:#d0ccc0}
-.leaflet-control-zoom a{background:#222!important;color:#ccc!important;border-color:#444!important}
-.leaflet-control-zoom a:hover{background:#2a2a2a!important}
-.leaflet-control-attribution{background:rgba(0,0,0,.6)!important;color:#888!important;font-size:9px!important}
-.leaflet-control-attribution a{color:#888!important}
-
-#mode-bar{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:#aaa;font-size:10px;padding:3px 8px;z-index:600;pointer-events:none;display:flex;justify-content:space-between;font-family:var(--font)}
-#toast{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#eee;padding:5px 16px;border-radius:16px;font-size:11px;z-index:700;pointer-events:none;display:none;white-space:nowrap;font-family:var(--font)}
-
-#panel-toggle{
-  display:none;
-  position:absolute;bottom:30px;right:12px;
-  width:44px;height:44px;border-radius:50%;
-  background:#222;border:2px solid #555;color:#fff;
-  font-size:18px;cursor:pointer;z-index:650;
-  align-items:center;justify-content:center;
-  box-shadow:0 2px 10px rgba(0,0,0,.5);
-}
-
-.sdot{width:13px;height:13px;border-radius:50%;background:#fff;border:3px solid #555;cursor:pointer;transition:transform .12s;box-shadow:0 1px 4px rgba(0,0,0,.5)}
-.sdot:hover{transform:scale(1.35)}
-.sdot.xfer{width:17px;height:17px;border:3px solid #fff;box-shadow:0 0 0 2px #555,0 2px 6px rgba(0,0,0,.6)}
-
-.depot-marker{
-  width:32px;height:32px;
-  background:#2a2a2a;
-  border:3px solid #fa0;
-  border-radius:4px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;cursor:pointer;
-  box-shadow:0 3px 10px rgba(0,0,0,.7);
-  transition:transform .12s;
-}
-.depot-marker:hover{transform:scale(1.12)}
-
-.popup{background:#111;border-radius:6px;min-width:200px;max-width:280px;box-shadow:0 4px 20px rgba(0,0,0,.8);overflow:hidden;font-family:var(--font)}
-.pp-head{display:flex;align-items:flex-start;justify-content:space-between;padding:9px 11px 5px;border-bottom:1px solid #222}
-.pp-name{font-size:14px;font-weight:700;color:#fff;flex:1;outline:none;cursor:text;line-height:1.3}
-.pp-name:focus{border-bottom:1px dashed #444}
-.pp-x{color:#555;font-size:17px;cursor:pointer;margin-left:6px;line-height:1;flex-shrink:0}
-.pp-x:hover{color:#fff}
-.pp-sub{font-size:10px;color:#666;padding:3px 11px;border-bottom:1px solid #1a1a1a;line-height:1.5}
-.pp-riders{display:flex;align-items:center;gap:5px;padding:3px 11px;font-size:11px;color:#666;border-bottom:1px solid #1a1a1a}
-.pp-lines{display:flex;gap:3px;padding:5px 11px;flex-wrap:wrap;border-bottom:1px solid #1a1a1a;min-height:38px;align-items:center}
-.plb{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;font-family:var(--font);position:relative}
-.plb-rm{position:absolute;top:-4px;right:-4px;width:11px;height:11px;border-radius:50%;background:#2a2a2a;border:1px solid #555;display:flex;align-items:center;justify-content:center;font-size:8px;color:#f66;cursor:pointer;line-height:1}
-.plb-rm:hover{background:#5a1a1a}
-.pp-add{padding:5px 11px 6px;border-bottom:1px solid #1a1a1a}
-.pp-add-label{font-size:9px;color:#444;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
-.pp-add-row{display:flex;gap:3px;flex-wrap:wrap}
-.pmini{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:8px;cursor:pointer;opacity:.65;transition:opacity .1s,transform .1s;font-family:var(--font)}
-.pmini:hover{opacity:1;transform:scale(1.1)}
-.pmini.on{opacity:.2;cursor:default}
-.pp-actions{display:flex;gap:5px;padding:6px 11px}
-.pp-btn{flex:1;padding:5px 0;border:none;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)}
-.pp-btn:hover{opacity:.8}
-.pp-del{background:#2a2a2a;color:#f66}
-
-.leaflet-popup-content-wrapper{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important;border-radius:0!important}
+.stat-icon{font-size:18px;opacity:.5;width:22px;text-align:center}
+.stat-value{font-size:18px;font-weight:700;line-height:1}
+.stat-label{font-size:11px;color:var(--text-secondary);margin-top:2px}
+#bottom-btns{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0;background:var(--panel-header-bg)}
+.bottom-btn{flex:1;padding:8px 4px;background:var(--panel-bg);border:1px solid var(--border);color:var(--text);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font);white-space:nowrap;box-shadow:var(--shadow)}
+.bottom-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.bottom-btn.screenshot{background:#f0f0f0;color:#333}
+[data-theme="dark"] .bottom-btn.screenshot{background:#333;color:#eee}
+.leaflet-container{background:var(--map-bg)}
+[data-theme="dark"] .leaflet-control-zoom a{background:#2a2a2a!important;color:#ddd!important;border-color:#444!important}
+[data-theme="light"] .leaflet-control-zoom a{background:#fff!important;color:#1a1a1a!important;border-color:#e0e0e0!important}
+.leaflet-control-attribution{background:rgba(255,255,255,.8)!important;color:#666!important;font-size:10px!important}
+[data-theme="dark"] .leaflet-control-attribution{background:rgba(0,0,0,.6)!important;color:#888!important}
+#mode-bar{position:absolute;bottom:0;left:0;right:0;background:rgba(255,255,255,.85);color:var(--text-secondary);font-size:11px;padding:4px 10px;z-index:600;pointer-events:none;display:flex;justify-content:space-between;border-top:1px solid var(--border)}
+[data-theme="dark"] #mode-bar{background:rgba(0,0,0,.5)}
+#toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:6px 18px;border-radius:20px;font-size:12px;z-index:700;pointer-events:none;display:none;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#panel-toggle{display:none;position:absolute;bottom:30px;right:12px;width:44px;height:44px;border-radius:50%;background:var(--panel-bg);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;z-index:650;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.sdot{width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #888;cursor:pointer;transition:transform .15s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.sdot:hover{transform:scale(1.3)}
+.sdot.xfer{width:18px;height:18px;border:3px solid #fff;box-shadow:0 0 0 2px #888,0 2px 6px rgba(0,0,0,.4)}
+.waypoint-marker{width:12px;height:12px;background:#fff;border:3px solid #666;border-radius:50%;cursor:grab;box-shadow:0 1px 4px rgba(0,0,0,.4);transition:transform .1s}
+.waypoint-marker:hover{transform:scale(1.3)}
+.depot-marker{width:34px;height:34px;background:#fff;border:3px solid #ff9800;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25);transition:transform .15s}
+.depot-marker:hover{transform:scale(1.1)}
+[data-theme="dark"] .depot-marker{background:#2a2a2a}
+.popup{background:var(--popup-bg);border-radius:8px;min-width:240px;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,.25);overflow:hidden;border:1px solid var(--border)}
+.pp-head{display:flex;align-items:flex-start;justify-content:space-between;padding:12px 14px 6px;border-bottom:1px solid var(--border)}
+.pp-name{font-size:15px;font-weight:700;flex:1;outline:none;cursor:text;line-height:1.3}
+.pp-name:focus{border-bottom:1px dashed var(--border)}
+.pp-x{color:var(--text-tertiary);font-size:18px;cursor:pointer;margin-left:8px;line-height:1}
+.pp-sub{font-size:11px;color:var(--text-secondary);padding:4px 14px;border-bottom:1px solid var(--border)}
+.pp-actions{display:flex;flex-direction:column;gap:6px;padding:8px 14px}
+.pp-btn{padding:8px 0;border:none;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);width:100%}
+.pp-del{background:var(--danger-soft);color:var(--danger)}
+.pp-connect{background:var(--accent-soft);color:var(--accent)}
+.pp-transfer{background:#e0e0e0;color:#333}
+[data-theme="dark"] .pp-transfer{background:#444;color:#eee}
+.pp-lines{display:flex;gap:4px;padding:8px 14px;flex-wrap:wrap;border-bottom:1px solid var(--border);min-height:32px;align-items:center}
+.plb{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;position:relative;box-shadow:var(--shadow)}
+.leaflet-popup-content-wrapper{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important}
 .leaflet-popup-content{margin:0!important}
 .leaflet-popup-tip-container{display:none!important}
 .leaflet-popup-close-button{display:none!important}
-
-.modal-ov{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:16px}
+.modal-ov{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px}
 .modal-ov.open{display:flex}
-.modal-box{background:#222;border:1px solid #444;border-radius:8px;padding:20px 24px;max-width:380px;width:100%;color:#ddd;font-family:var(--font)}
-.modal-box h2{color:#fff;margin-bottom:12px;font-size:16px}
-.modal-box p{font-size:11px;line-height:1.6;margin-bottom:6px;color:#999}
-.mbtn{background:#333;border:none;color:#ccc;padding:6px 16px;border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font)}
-.mbtn:hover{background:#3a3a3a}
-
-#insert-hint{
-  position:absolute;
-  background:rgba(10,10,10,.82);color:#cfc;border:1px solid #3a5a3a;
-  padding:3px 10px;border-radius:10px;font-size:10px;
-  z-index:750;pointer-events:none;display:none;
-  white-space:nowrap;font-family:var(--font);
-  transform:translate(14px,-50%);
-}
-
-.train-marker{
-  border-radius:50%;
-  cursor:default;
-  box-shadow:0 0 6px rgba(0,0,0,.6),0 0 10px currentColor;
-  transition:none;
-  will-change:transform;
-}
-
+.modal-box{background:var(--panel-bg);border:1px solid var(--border);border-radius:10px;padding:24px 28px;max-width:400px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.modal-box h2{margin-bottom:16px;font-size:17px;font-weight:700}
+.modal-box p{font-size:12px;line-height:1.6;margin-bottom:8px;color:var(--text-secondary)}
+.mbtn{background:var(--panel-bg-alt);border:none;color:var(--text);padding:8px 18px;border-radius:6px;cursor:pointer;font-size:12px;font-family:var(--font);font-weight:600}
+#screenshot-modal .modal-box{max-width:800px}
+#screenshot-modal .img-wrap{background:var(--bg-main);padding:10px;border-radius:6px;margin-bottom:16px;overflow:auto;max-height:60vh;text-align:center;border:1px solid var(--border)}
+#screenshot-modal img{max-width:100%;height:auto;border-radius:4px}
+#insert-hint{position:absolute;background:var(--popup-bg);color:var(--text);border:1px solid var(--border);padding:4px 12px;border-radius:12px;font-size:11px;z-index:750;pointer-events:none;display:none;white-space:nowrap;transform:translate(14px,-50%);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.train-marker{border-radius:50%;cursor:default;box-shadow:0 0 6px rgba(0,0,0,.4),0 0 10px currentColor;transition:none;will-change:transform}
 @media (max-width:640px){
   :root{--panel-w:100vw}
-  #app{position:relative}
-  #panel{
-    position:absolute;
-    top:0;bottom:0;right:0;
-    width:var(--panel-w);
-    transform:translateX(100%);
-    z-index:800;
-    border-left:none;
-    box-shadow:-4px 0 20px rgba(0,0,0,.6);
-  }
+  #panel{position:absolute;top:0;bottom:0;right:0;transform:translateX(100%);z-index:800;border-left:none}
   #panel.mobile-open{transform:translateX(0)}
   #mobile-close-btn{display:block}
   #panel-toggle{display:flex}
-  #mode-bar span:last-child{display:none}
 }
 </style>
 </head>
@@ -304,355 +178,190 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:#1a1a1a
 <div id="app">
   <div id="map-wrap">
     <div id="map"></div>
-    <div id="mode-bar">
-      <span id="mode-label">Select a line, then click the map to add stations</span>
-      <span>ESC = deselect • drag = move station</span>
-    </div>
+    <div id="mode-bar"><span id="mode-label">Select a line, then click the map to add stations</span><span>ESC = deselect • drag = move station</span></div>
     <div id="toast"></div>
     <div id="insert-hint"></div>
     <button id="panel-toggle" onclick="toggleMobilePanel()">☰</button>
   </div>
-
   <div id="panel">
-    <div id="panel-header">
-      <h1>Simple Subway Map</h1>
-      <button id="mobile-close-btn" onclick="toggleMobilePanel()">✕</button>
-    </div>
-
+    <div id="panel-header"><h1>Simple Subway Map</h1><button id="mobile-close-btn" onclick="toggleMobilePanel()">✕</button></div>
     <div id="panel-scroll">
-
       <div class="p-section">
-        <button class="start-btn" onclick="startScratch()">✦ Start from scratch</button>
-      </div>
-
-      <div id="lines-section">
-        <div class="lines-row" id="row-ace"></div>
-        <div class="lines-row" id="row-bdfm"></div>
-        <div class="lines-row" id="row-gjzl"></div>
-        <div class="lines-row" id="row-nqrw"></div>
-        <div class="lines-row" id="row-s123"></div>
-        <div class="lines-row" id="row-4567"></div>
-        <div id="extra-lines-wrap">
-          <div style="font-size:9px;color:#444;text-transform:uppercase;letter-spacing:1px;margin:4px 0 3px">Additional Lines</div>
-          <div id="extra-lines-row" class="lines-row"></div>
+        <div class="p-title">Search Location</div>
+        <div style="display:flex;gap:6px">
+          <input type="text" id="city-input" placeholder="e.g. London" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:4px;background:var(--input-bg);color:var(--text);font-family:var(--font);font-size:12px">
+          <button class="fb fb-ok" onclick="searchCity()" style="flex:0 0 auto;padding:6px 12px">Find</button>
         </div>
-        <button class="expand-btn" id="toggle-extra-btn" onclick="toggleExtra()">Show Additional Lines</button>
+      </div>
+      <div id="lines-section">
+        <div id="lines-list"></div>
+        <button class="expand-btn" onclick="toggleCustomForm()">+ Add Line</button>
         <button class="expand-btn" id="add-depot-btn" onclick="toggleDepotMode()">🏭 Add Depot</button>
-        <button class="expand-btn" id="add-custom-btn" onclick="toggleCustomForm()">+ Add Custom Line</button>
         <div id="custom-line-form">
           <div class="ff"><label>Label (1–4 chars)</label><input type="text" id="cl-name" placeholder="e.g. X" maxlength="4"/></div>
           <div class="ff"><div class="cpair">
-            <div class="cpick"><label>Background</label><input type="color" id="cl-bg" value="#888"/></div>
+            <div class="cpick"><label>Background</label><input type="color" id="cl-bg" value="#888888"/></div>
             <div class="cpick"><label>Text</label><input type="color" id="cl-fg" value="#ffffff"/></div>
           </div></div>
-          <div class="fa-row">
-            <button class="fb fb-ok" onclick="addCustomLine()">Add Line</button>
-            <button class="fb fb-cancel" onclick="toggleCustomForm()">Cancel</button>
-          </div>
+          <div class="fa-row"><button class="fb fb-ok" onclick="addCustomLine()">Add Line</button><button class="fb fb-cancel" onclick="toggleCustomForm()">Cancel</button></div>
         </div>
       </div>
-
       <div id="controls-bar">
-        <div id="ali">
-          <div id="ali-dot"></div>
-          <div id="ali-label">—</div>
-          <div class="ali-btns">
-            <button class="ali-btn" onclick="openEditLine()" title="Edit line">✎ Edit</button>
-            <button class="ali-btn danger" onclick="deleteActiveLine()" title="Delete line">✕</button>
-          </div>
-        </div>
-        <div class="ctrl-row" style="margin-top:4px">
-          <span class="ctrl-lbl">⟳ Circular / loop</span>
-          <label class="sw"><input type="checkbox" id="circ-chk" onchange="toggleCircular(this.checked)"/><div class="sw-track"></div></label>
-        </div>
-        <div class="ctrl-row">
-          <span class="ctrl-lbl">〜 Smooth curves</span>
-          <label class="sw"><input type="checkbox" id="smooth-chk" onchange="toggleSmooth(this.checked)"/><div class="sw-track"></div></label>
-        </div>
+        <div id="ali"><div id="ali-dot"></div><div id="ali-label">—</div><div class="ali-btns"><button class="ali-btn" onclick="openEditLine()">✎</button><button class="ali-btn danger" onclick="deleteActiveLine()">✕</button></div></div>
+        <div id="edit-mode-bar"><button class="emode-btn active" id="emode-station" onclick="setEditMode('station')">+ Station</button><button class="emode-btn" id="emode-waypoint" onclick="setEditMode('waypoint')">+ Waypoint</button></div>
+        <div class="ctrl-row" style="margin-top:6px"><span class="ctrl-lbl">⟳ Circular</span><label class="sw"><input type="checkbox" id="circ-chk" onchange="toggleCircular(this.checked)"/><div class="sw-track"></div></label></div>
+        <div class="ctrl-row"><span class="ctrl-lbl">〜 Smooth</span><label class="sw"><input type="checkbox" id="smooth-chk" onchange="toggleSmooth(this.checked)"/><div class="sw-track"></div></label></div>
       </div>
-
       <div id="route-section">
-        <div id="route-header" onclick="toggleRouteDiagram()">
-          <span id="rti">▶</span>&nbsp; Route Diagram
+        <div id="route-header" onclick="toggleRouteDiagram()"><span id="rti">▶</span>&nbsp; Route Diagram</div>
+        <div id="route-body"><div id="route-content"><div class="no-msg">Select a line.</div></div></div>
+      </div>
+      <div id="train-section">
+        <div class="train-section-title">🚇 Trains on this line</div>
+        <div class="train-table-wrap"><table class="train-table"><thead><tr><th>Статус</th><th>Имя поездов</th><th>Кол-во</th></tr></thead><tbody id="train-status-tbody"></tbody></table></div>
+        <div id="train-list"></div>
+        <div style="display:flex;gap:6px">
+          <button id="new-train-btn" onclick="toggleNewTrainForm()">+ New Train</button>
+          <button id="new-freight-btn" onclick="addFreightTrain()" style="display:none">🚚 Freight</button>
         </div>
-        <div id="route-body">
-          <div id="route-content"><div class="no-msg">Select a line to see its route.</div></div>
-
-          <div id="train-section" style="display:none">
-            <div class="train-section-title">🚇 Trains on this line</div>
-            <div id="train-list"></div>
-            <button id="new-train-btn" onclick="toggleNewTrainForm()">+ New Train</button>
-            <div id="new-train-form" class="train-form" style="margin-top:5px">
-              <div class="ff"><label>Model name</label>
-                <input type="text" id="nt-model" list="nt-model-list" placeholder="e.g. R160A"/>
-                <datalist id="nt-model-list"></datalist>
-              </div>
-              <div class="ff"><label>Total cars available</label><input type="number" id="nt-total" min="1" max="9999" value="60"/></div>
-              <div class="ff"><label>Cars per train set</label><input type="number" id="nt-per" min="1" max="20" value="10"/></div>
-              <div style="font-size:10px;color:#666;margin-bottom:5px" id="nt-count-preview">→ 6 train sets</div>
-              <div class="fa-row">
-                <button class="fb fb-ok" onclick="addTrain()">Add</button>
-                <button class="fb fb-cancel" onclick="toggleNewTrainForm()">Cancel</button>
-              </div>
-            </div>
-          </div>
+        <div id="new-train-form" class="train-form" style="margin-top:6px">
+          <div class="ff"><label>Model name</label><input type="text" id="nt-model" list="nt-model-list" placeholder="e.g. R160A"/><datalist id="nt-model-list"></datalist></div>
+          <div class="ff"><label>Total cars</label><input type="number" id="nt-total" min="1" max="9999" value="60"/></div>
+          <div class="ff"><label>Cars per set</label><input type="number" id="nt-per" min="1" max="20" value="10"/></div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:6px" id="nt-count-preview">→ 6 sets</div>
+          <div class="fa-row"><button class="fb fb-ok" onclick="addTrain()">Add</button><button class="fb fb-cancel" onclick="toggleNewTrainForm()">Cancel</button></div>
         </div>
       </div>
-
       <div id="settings-section">
         <div class="stitle">Appearance</div>
-        <div class="srow">
-          <span class="slabel">Font</span>
-          <select class="sselect" id="font-select" onchange="changeFont(this.value)">
-            <option value="'Helvetica Neue',Helvetica,Arial,sans-serif">Helvetica</option>
-            <option value="'Moscow Sans',sans-serif">Moscow Sans</option>
-            <option value="'Roboto',sans-serif">Roboto</option>
-            <option value="'Montserrat',sans-serif">Montserrat</option>
-            <option value="'Oswald',sans-serif">Oswald</option>
-            <option value="'Nunito',sans-serif">Nunito</option>
-            <option value="'Playfair Display',serif">Playfair Display</option>
-            <option value="'Bebas Neue',sans-serif">Bebas Neue</option>
-            <option value="'Source Code Pro',monospace">Source Code Pro</option>
-          </select>
-        </div>
-        <div class="srow">
-          <span class="slabel">Map tiles</span>
-          <select class="sselect" id="map-prov-sel2" onchange="switchTiles(this.value)">
-            <option value="osm">OpenStreetMap</option>
-            <option value="esri">Esri Satellite</option>
-            <option value="yandex-map">Яндекс Карта</option>
-            <option value="yandex-sat">Яндекс Спутник</option>
-            <option value="yandex-hybrid">Яндекс Гибрид</option>
-          </select>
-        </div>
+        <div class="srow"><span class="slabel">Theme</span><select class="sselect" id="theme-select" onchange="setTheme(this.value)"><option value="light">Light</option><option value="dark">Dark</option></select></div>
+        <div class="srow"><span class="slabel">Font</span><select class="sselect" id="font-select" onchange="changeFont(this.value)"><option value="'Helvetica Neue',Helvetica,Arial,sans-serif">Helvetica</option><option value="'Roboto',sans-serif">Roboto</option><option value="'Montserrat',sans-serif">Montserrat</option><option value="'Oswald',sans-serif">Oswald</option><option value="'Nunito',sans-serif">Nunito</option></select></div>
+        <div class="srow"><span class="slabel">Map tiles</span><select class="sselect" id="map-prov-sel2" onchange="switchTiles(this.value)"><option value="osm">OSM</option><option value="esri">Esri</option><option value="yandex-map">Яндекс</option></select></div>
       </div>
-
       <div id="stats-section">
-        <div class="stat-row"><div class="stat-icon">💳</div><div><div class="stat-value">$2.90</div><div class="stat-label">Single-ride fare</div></div></div>
-        <div class="stat-row"><div class="stat-icon">🧍</div><div><div class="stat-value" id="stat-riders">—</div><div class="stat-label">Avg weekday ridership</div></div></div>
+        <div class="stat-row"><div class="stat-icon">💳</div><div><div class="stat-value">$2.90</div><div class="stat-label">Fare</div></div></div>
+        <div class="stat-row"><div class="stat-icon">🧍</div><div><div class="stat-value" id="stat-riders">—</div><div class="stat-label">Ridership</div></div></div>
         <div class="stat-row"><div class="stat-icon">🚇</div><div><div class="stat-value" id="stat-trains">0</div><div class="stat-label">Active trains</div></div></div>
-        <div class="stat-row"><div class="stat-icon">⭐</div><div><div class="stat-value" id="stat-rating">—</div><div class="stat-label">System rating</div></div></div>
       </div>
-
     </div>
-
     <div id="bottom-btns">
       <button class="bottom-btn primary" onclick="saveToFile()">💾 Save</button>
       <button class="bottom-btn" onclick="loadFromFile()">📂 Load</button>
+      <button class="bottom-btn screenshot" onclick="generateScreenshot()">📸 Snap</button>
       <button class="bottom-btn" onclick="openAbout()">?</button>
     </div>
     <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFileLoad(event)"/>
   </div>
 </div>
 
-<div id="about-modal" class="modal-ov">
-  <div class="modal-box">
-    <h2>Simple Subway Map</h2>
-    <p>Design your ideal transit network. Select a line → click map to add stations → drag to move.</p>
-    <p><b>Insert mode:</b> clicking near a segment inserts the new station at the closest point on the line.</p>
-    <p><b>Depots:</b> click "🏭 Add Depot", then click map. Click the depot → attach it to line+station.</p>
-    <p><b>Trains:</b> select a line → Route Diagram → "New Train". Trains animate along the route.</p>
-    <button class="mbtn" onclick="closeAbout()">Close</button>
-  </div>
-</div>
+<div id="about-modal" class="modal-ov"><div class="modal-box"><h2>Simple Subway Map</h2><p>Console command: <code>triggerDelay()</code> or <code>triggerDelay('LineLabel')</code></p><p>Freight: max 2 per line. Goes depot→depot, disappears, 5% chance/sec to respawn.</p><button class="mbtn" onclick="closeAbout()">Close</button></div></div>
 
-<div id="edit-line-modal" class="modal-ov">
-  <div class="modal-box">
-    <h2>Edit Line</h2>
-    <div class="ff"><label>Label (1–4 chars)</label><input type="text" id="el-label" maxlength="4"/></div>
-    <div class="ff"><label>Title / Description</label><input type="text" id="el-title"/></div>
-    <div class="ff"><div class="cpair">
-      <div class="cpick"><label>Background</label><input type="color" id="el-bg"/></div>
-      <div class="cpick"><label>Text color</label><input type="color" id="el-fg"/></div>
-    </div></div>
-    <div class="fa-row">
-      <button class="fb fb-ok" onclick="saveEditLine()">Save</button>
-      <button class="fb fb-cancel" onclick="closeEditLine()">Cancel</button>
-    </div>
-  </div>
-</div>
+<div id="edit-line-modal" class="modal-ov"><div class="modal-box"><h2>Edit Line</h2>
+  <div class="ff"><label>Label</label><input type="text" id="el-label" maxlength="4"/></div>
+  <div class="ff"><label>Title</label><input type="text" id="el-title"/></div>
+  <div class="ff"><div class="cpair">
+    <div class="cpick"><label>Background</label><input type="color" id="el-bg"/></div>
+    <div class="cpick"><label>Text</label><input type="color" id="el-fg"/></div>
+  </div></div>
+  <div class="fa-row"><button class="fb fb-ok" onclick="saveEditLine()">Save</button><button class="fb fb-cancel" onclick="closeEditLine()">Cancel</button></div>
+</div></div>
 
-<div id="edit-train-modal" class="modal-ov">
-  <div class="modal-box">
-    <h2>Edit Train</h2>
-    <div class="ff"><label>Model name</label><input type="text" id="et-model" list="nt-model-list"/></div>
-    <div class="ff"><label>Total cars available</label><input type="number" id="et-total" min="1" max="9999"/></div>
-    <div class="ff"><label>Cars per train set</label><input type="number" id="et-per" min="1" max="20"/></div>
-    <div style="font-size:10px;color:#666;margin-bottom:6px" id="et-count-preview">→ 6 train sets</div>
-    <div class="fa-row">
-      <button class="fb fb-ok" onclick="saveEditTrain()">Save</button>
-      <button class="fb fb-cancel" onclick="closeEditTrain()">Cancel</button>
-    </div>
-  </div>
-</div>
+<div id="edit-train-modal" class="modal-ov"><div class="modal-box"><h2>Edit Train</h2>
+  <div class="ff"><label>Model</label><input type="text" id="et-model" list="nt-model-list"/></div>
+  <div class="ff"><label>Total cars</label><input type="number" id="et-total" min="1" max="9999"/></div>
+  <div class="ff"><label>Cars per set</label><input type="number" id="et-per" min="1" max="20"/></div>
+  <div class="ff"><label>Status</label><select id="et-status" class="sselect" style="width:100%;max-width:none">
+    <option value="running">На маршруте</option><option value="testing">Испытания</option><option value="stopped">Не на маршруте</option><option value="decommissioned">Списаны</option><option value="other">Прочее</option>
+  </select></div>
+  <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px" id="et-count-preview">→ 6 sets</div>
+  <div class="fa-row"><button class="fb fb-ok" onclick="saveEditTrain()">Save</button><button class="fb fb-cancel" onclick="closeEditTrain()">Cancel</button></div>
+</div></div>
 
-<div id="transfer-train-modal" class="modal-ov">
-  <div class="modal-box">
-    <h2>Transfer Train</h2>
-    <div class="ff">
-      <label>Target line</label>
-      <select id="tt-line" class="sselect" style="width:100%;max-width:none"></select>
-    </div>
-    <div class="fa-row">
-      <button class="fb fb-ok" onclick="confirmTransferTrain()">Transfer</button>
-      <button class="fb fb-cancel" onclick="closeTransferTrain()">Cancel</button>
-    </div>
-  </div>
-</div>
+<div id="transfer-train-modal" class="modal-ov"><div class="modal-box"><h2>Transfer Train</h2>
+  <div class="ff"><label>Target line</label><select id="tt-line" class="sselect" style="width:100%;max-width:none"></select></div>
+  <div class="fa-row"><button class="fb fb-ok" onclick="confirmTransferTrain()">Transfer</button><button class="fb fb-cancel" onclick="closeTransferTrain()">Cancel</button></div>
+</div></div>
+
+<div id="screenshot-modal" class="modal-ov"><div class="modal-box"><h2>Map Snapshot</h2>
+  <div class="img-wrap"><img id="snapshot-img" src="" alt="Snapshot"/></div>
+  <div class="fa-row"><button class="fb fb-ok" onclick="downloadSnapshot()">Download PNG</button><button class="fb fb-cancel" onclick="copySnapshot()">Copy to Clipboard</button><button class="fb fb-cancel" onclick="closeScreenshot()" style="flex:0.5">Close</button></div>
+</div></div>
 
 <script>
-const C={
-  BLUE:'#2850AD',ORANGE:'#FF6319',GREEN:'#6CBE45',BROWN:'#996633',
-  GREY:'#A7A9AC',YELLOW:'#FCCC0A',SGREY:'#808183',RED:'#EE352E',
-  DGREEN:'#00933C',PURPLE:'#B933AD',LTBLUE:'#00A1DE',
-  TEAL:'#00838A',MAROON:'#8B0000',NAVY:'#003580',
-};
-
-const NYC_LINES=[
-  {id:'A', label:'A', bg:C.BLUE,   fg:'#fff',row:'ace', title:'A Train – 8th Ave Express'},
-  {id:'C', label:'C', bg:C.BLUE,   fg:'#fff',row:'ace', title:'C Train – 8th Ave Local'},
-  {id:'E', label:'E', bg:C.BLUE,   fg:'#fff',row:'ace', title:'E Train – Queens–8th Ave'},
-  {id:'H', label:'H', bg:C.BLUE,   fg:'#fff',row:'ace', title:'H – Rockaway Shuttle'},
-  {id:'K', label:'K', bg:C.BLUE,   fg:'#fff',row:'ace', title:'K – Proposed'},
-  {id:'B', label:'B', bg:C.ORANGE, fg:'#fff',row:'bdfm',title:'B Train – 6th Ave Express'},
-  {id:'D', label:'D', bg:C.ORANGE, fg:'#fff',row:'bdfm',title:'D Train – 6th Ave Express'},
-  {id:'F', label:'F', bg:C.ORANGE, fg:'#fff',row:'bdfm',title:'F Train – 6th Ave Local'},
-  {id:'M', label:'M', bg:C.ORANGE, fg:'#fff',row:'bdfm',title:'M Train – 6th Ave Local'},
-  {id:'V', label:'V', bg:C.ORANGE, fg:'#fff',row:'bdfm',title:'V Train – 6th Ave (2001–2010)'},
-  {id:'G', label:'G', bg:C.GREEN,  fg:'#fff',row:'gjzl',title:'G Train – Crosstown Local'},
-  {id:'J', label:'J', bg:C.BROWN,  fg:'#fff',row:'gjzl',title:'J Train – Nassau St Local'},
-  {id:'Z', label:'Z', bg:C.BROWN,  fg:'#fff',row:'gjzl',title:'Z Train – Nassau St Express'},
-  {id:'L', label:'L', bg:C.GREY,   fg:'#fff',row:'gjzl',title:'L Train – 14th St–Canarsie'},
-  {id:'N', label:'N', bg:C.YELLOW, fg:'#000',row:'nqrw',title:'N Train – Broadway Express'},
-  {id:'Q', label:'Q', bg:C.YELLOW, fg:'#000',row:'nqrw',title:'Q Train – Broadway Express'},
-  {id:'R', label:'R', bg:C.YELLOW, fg:'#000',row:'nqrw',title:'R Train – Broadway Local'},
-  {id:'W', label:'W', bg:C.YELLOW, fg:'#000',row:'nqrw',title:'W Train – Whitehall–Astoria'},
-  {id:'S1',label:'S', bg:C.SGREY,  fg:'#fff',row:'s123',title:'S – 42nd St Shuttle'},
-  {id:'S2',label:'S', bg:C.SGREY,  fg:'#fff',row:'s123',title:'S – Franklin Av Shuttle',dimmed:true},
-  {id:'S3',label:'S', bg:C.SGREY,  fg:'#fff',row:'s123',title:'S – Rockaway Pk Shuttle', dimmed:true},
-  {id:'1', label:'1', bg:C.RED,    fg:'#fff',row:'s123',title:'1 Train – 7th Ave Local'},
-  {id:'2', label:'2', bg:C.RED,    fg:'#fff',row:'s123',title:'2 Train – 7th Ave Express'},
-  {id:'3', label:'3', bg:C.RED,    fg:'#fff',row:'s123',title:'3 Train – 7th Ave Express'},
-  {id:'4', label:'4', bg:C.DGREEN, fg:'#fff',row:'4567',title:'4 Train – Lex Ave Express'},
-  {id:'5', label:'5', bg:C.DGREEN, fg:'#fff',row:'4567',title:'5 Train – Lex Ave Express'},
-  {id:'6', label:'6', bg:C.DGREEN, fg:'#fff',row:'4567',title:'6 Train – Lex Ave Local'},
-  {id:'7', label:'7', bg:C.PURPLE, fg:'#fff',row:'4567',title:'7 Train – Flushing'},
-  {id:'SI',label:'SI',bg:C.BLUE,   fg:'#fff',row:'4567',title:'Staten Island Railway'},
-  {id:'JFK',label:'✈',bg:C.YELLOW,fg:'#000',row:'4567',title:'JFK AirTrain'},
-];
-
-const EXTRA_LINES=[
-  {id:'T',  label:'T',  bg:C.LTBLUE,fg:'#fff',title:'T – 2nd Ave Subway'},
-  {id:'BQX',label:'BQX',bg:'#556',  fg:'#fff',title:'BQX – Brooklyn–Queens Connector'},
-  {id:'Tb', label:'Tb', bg:C.YELLOW,fg:'#000',title:'TriboroRX'},
-  {id:'MJ', label:'MJ', bg:C.PURPLE,fg:'#fff',title:'Metro-Jamaica'},
-  {id:'8',  label:'8',  bg:C.DGREEN,fg:'#fff',title:'8 – Proposed (Lex group)'},
-  {id:'9',  label:'9',  bg:C.RED,   fg:'#fff',title:'9 – 7th Ave Skip-Stop (disc. 2005)'},
-  {id:'10', label:'10', bg:C.DGREEN,fg:'#fff',title:'10 – Triboro / Proposed'},
-  {id:'11', label:'11', bg:C.PURPLE,fg:'#fff',title:'11 – Proposed (Flushing group)'},
-  {id:'12', label:'12', bg:C.DGREEN,fg:'#fff',title:'12 – IND 2nd System (hist.)'},
-  {id:'13', label:'13', bg:C.RED,   fg:'#fff',title:'13 – Proposed'},
-];
-
 const MAP_PROVIDERS={
-  'osm':        {url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',            opts:{attribution:'© OpenStreetMap',maxZoom:19}},
-  'esri':       {url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',opts:{attribution:'© Esri',maxZoom:18}},
-  'yandex-map': {url:'https://core-renderer-tiles.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&scale=1&lang=ru_RU',opts:{attribution:'© Яндекс',maxZoom:19}},
-  'yandex-sat': {url:'https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&scale=1&lang=ru_RU',          opts:{attribution:'© Яндекс',maxZoom:19}},
-  'yandex-hybrid':{hybrid:true,layers:[
-    {url:'https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&scale=1&lang=ru_RU'},
-    {url:'https://core-renderer-tiles.maps.yandex.net/tiles?l=skl&x={x}&y={y}&z={z}&scale=1&lang=ru_RU'},
-  ],opts:{attribution:'© Яндекс',maxZoom:19}},
+  'osm':{url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',opts:{attribution:'© OSM',maxZoom:19}},
+  'esri':{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',opts:{attribution:'© Esri',maxZoom:18}},
+  'yandex-map':{url:'https://core-renderer-tiles.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&scale=1&lang=ru_RU',opts:{attribution:'© Яндекс',maxZoom:19}}
 };
 
 let map,currentTile=null,hybridLayers=[];
-let activeLineId=null;
-let lines={};
-let stations={};
-let depots={};
-let depotMode=false;
-let extraVisible=false;
-let routeOpen=false;
-let dragState=null;
-let insertPreviewLine=null;
-let hoverInsertInfo=null;
-let trainAnimFrame=null;
-let editingTrain=null;
-let transferringTrain=null;
+let activeLineId=null,lines={},stations={},depots={},transfers={},transferLines=[];
+let connectingSource=null,pendingBranchWaypoint=null,depotMode=false,routeOpen=false;
+let dragState=null,insertPreviewLine=null,hoverInsertInfo=null,trainAnimFrame=null,lastAnimTime=null;
+let editingTrain=null,transferringTrain=null,editMode='station',lastSnapshotDataUrl=null;
 
 const genId=()=>'_'+Math.random().toString(36).substr(2,9);
+const TRAIN_SPEED=0.00001;
+const FREIGHT_SPEED=0.00002;
+const DWELL_BASE_MS=2500;
+const DELAY_CHANCE=0.20;
+const MIN_GAP=0.02;
 
-function initMap(){
-  map=L.map('map',{center:[40.728,-73.944],zoom:12,zoomControl:true});
-  switchTiles('osm');
-  map.on('click',onMapClick);
-  map.on('mousemove',onMouseMove);
-  map.on('mouseup',onMouseUp);
-  map.on('mouseout',onMapMouseOut);
-}
-
-function switchTiles(key){
-  if(currentTile){map.removeLayer(currentTile);currentTile=null;}
-  hybridLayers.forEach(l=>map.removeLayer(l));hybridLayers=[];
-  const p=MAP_PROVIDERS[key];if(!p)return;
-  if(p.hybrid){p.layers.forEach(lc=>{const t=L.tileLayer(lc.url,p.opts);t.addTo(map);hybridLayers.push(t);});}
-  else{currentTile=L.tileLayer(p.url,p.opts);currentTile.addTo(map);}
-}
-
+function initMap(){map=L.map('map',{center:[20,0],zoom:2,zoomControl:true});switchTiles('osm');map.on('click',onMapClick);map.on('mousemove',onMouseMove);map.on('mouseup',onMouseUp);map.on('mouseout',onMapMouseOut);}
+function switchTiles(key){if(currentTile){map.removeLayer(currentTile);currentTile=null;}hybridLayers.forEach(l=>map.removeLayer(l));hybridLayers=[];const p=MAP_PROVIDERS[key];if(!p)return;currentTile=L.tileLayer(p.url,p.opts);currentTile.addTo(map);}
 function changeFont(v){document.documentElement.style.setProperty('--font',v);}
+function setTheme(v){document.documentElement.setAttribute('data-theme',v);const sel=document.getElementById('theme-select');if(sel&&sel.value!==v)sel.value=v;redrawTransfers();}
 function toggleMobilePanel(){document.getElementById('panel').classList.toggle('mobile-open');}
 
-function ensureLine(def){
-  if(!lines[def.id])
-    lines[def.id]={...def,stations:[],circular:false,smooth:false,polylines:[],custom:false,trains:[]};
+async function searchCity(){
+  const q=document.getElementById('city-input').value.trim();if(!q)return;
+  try{
+    const r=await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=1`);
+    const data=await r.json();
+    if(data.features&&data.features.length>0){
+      const f=data.features[0];
+      if (f && f.geometry && f.geometry.coordinates && f.geometry.coordinates.length >= 2) {
+        const[lng,lat]=f.geometry.coordinates;
+        map.setView([lat,lng],12);
+        showToast('Moved to '+(f.properties.name||q));
+      } else {
+        showToast('Location has no coordinates');
+      }
+    }else showToast('Not found');
+  }catch(e){
+    console.error("Search error:", e);
+    showToast('Search failed');
+  }
 }
+
+function ensureLine(def){if(!lines[def.id])lines[def.id]={...def,nodes:[],circular:false,smooth:true,polylines:[],trains:[],_stationFracs:null};}
 
 function buildLinesPanel(){
-  const ROWS={ace:'row-ace',bdfm:'row-bdfm',gjzl:'row-gjzl',nqrw:'row-nqrw',s123:'row-s123','4567':'row-4567'};
-  Object.values(ROWS).forEach(id=>document.getElementById(id).innerHTML='');
-  document.getElementById('extra-lines-row').innerHTML='';
-
-  NYC_LINES.forEach(def=>{ensureLine(def);const r=document.getElementById(ROWS[def.row]);if(r)r.appendChild(makeBtn(def));});
-  EXTRA_LINES.forEach(def=>{ensureLine(def);document.getElementById('extra-lines-row').appendChild(makeBtn(def));});
-  Object.values(lines).filter(l=>l.custom).forEach(def=>document.getElementById('extra-lines-row').appendChild(makeBtn(def)));
-  updateControlsBar();
-  updateStatTrains();
+  const c=document.getElementById('lines-list');c.innerHTML='';
+  const row=document.createElement('div');row.className='lines-row';
+  Object.values(lines).forEach(l=>row.appendChild(makeBtn(l)));
+  c.appendChild(row);updateControlsBar();updateStatTrains();
 }
-
 function makeBtn(def){
   const line=lines[def.id]||def;
-  const hasTrains=line.trains&&line.trains.some(t=>t.running);
+  const hasTrains=line.trains&&line.trains.some(t=>isTrainActive(t));
   const btn=document.createElement('div');
-  btn.className='line-btn'+(def.disabled?' disabled':'')+(activeLineId===def.id?' active':'')+(hasTrains?' has-trains':'');
-  btn.style.background=line.bg||def.bg;
-  btn.style.color=line.fg||def.fg;
-  if(def.dimmed)btn.style.opacity='0.65';
-  btn.textContent=line.label||def.label;
-  btn.title=line.title||def.title||def.label;
+  btn.className='line-btn'+(activeLineId===def.id?' active':'')+(hasTrains?' has-trains':'');
+  btn.style.background=line.bg;btn.style.color=line.fg;btn.textContent=line.label;btn.title=line.title||line.label;
   const dot=document.createElement('div');dot.className='train-dot';btn.appendChild(dot);
-  if(!def.disabled)btn.addEventListener('click',()=>selectLine(def.id));
+  btn.addEventListener('click',()=>selectLine(def.id));
   return btn;
 }
-
 function selectLine(id){
   if(activeLineId===id){deselectLine();return;}
-  clearInsertPreview();
-  if(depotMode)toggleDepotMode(false);
-  activeLineId=id;
-  buildLinesPanel();
-  updateControlsBar();
-  updateRouteDiagram();
-  updateModeLabel();
+  clearInsertPreview();if(depotMode)toggleDepotMode(false);
+  pendingBranchWaypoint=null;activeLineId=id;
+  buildLinesPanel();updateControlsBar();updateRouteDiagram();updateTrainSection();updateWaypointVisibility();updateModeLabel();
 }
 function deselectLine(){
-  clearInsertPreview();
-  activeLineId=null;
-  buildLinesPanel();
-  updateControlsBar();
-  updateRouteDiagram();
-  updateModeLabel();
+  clearInsertPreview();activeLineId=null;
+  buildLinesPanel();updateControlsBar();updateRouteDiagram();updateTrainSection();updateWaypointVisibility();updateModeLabel();
 }
-
 function updateControlsBar(){
   const bar=document.getElementById('controls-bar');
   if(!activeLineId){bar.classList.remove('visible');return;}
@@ -661,28 +370,20 @@ function updateControlsBar(){
   document.getElementById('ali-dot').style.background=l.bg;
   document.getElementById('ali-label').textContent=l.title||l.label;
   document.getElementById('circ-chk').checked=l.circular||false;
-  document.getElementById('smooth-chk').checked=l.smooth||false;
+  document.getElementById('smooth-chk').checked=l.smooth!==false;
 }
-
-function toggleCircular(v){
-  if(!activeLineId)return;
-  lines[activeLineId].circular=v;
-  redrawLine(lines[activeLineId]);
-  updateRouteDiagram();
-  Object.values(depots).forEach(dp=>{
-    if(dp.connections.some(c=>c.lineId===activeLineId))redrawDepotConnections(dp);
-  });
+function setEditMode(m){editMode=m;document.getElementById('emode-station').classList.toggle('active',m==='station');document.getElementById('emode-waypoint').classList.toggle('active',m==='waypoint');updateModeLabel();}
+function updateWaypointVisibility(){
+  Object.values(lines).forEach(l=>{l.nodes.forEach(n=>{if(n.type==='waypoint'&&n.marker){if(activeLineId===l.id){if(!map.hasLayer(n.marker))n.marker.addTo(map);}else{if(map.hasLayer(n.marker))map.removeLayer(n.marker);}}});});
 }
-
+function toggleCircular(v){if(!activeLineId)return;lines[activeLineId].circular=v;lines[activeLineId]._stationFracs=null;redrawLine(lines[activeLineId]);updateRouteDiagram();}
 function toggleSmooth(v){
   if(!activeLineId)return;
   lines[activeLineId].smooth=v;
+  lines[activeLineId]._stationFracs=null;
   redrawLine(lines[activeLineId]);
-  Object.values(depots).forEach(dp=>{
-    if(dp.connections.some(c=>c.lineId===activeLineId))redrawDepotConnections(dp);
-  });
+  Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{if(b.lineId===activeLineId)redrawBranch(dp,b);});});
 }
-
 function openEditLine(){
   if(!activeLineId)return;
   const l=lines[activeLineId];
@@ -698,510 +399,449 @@ function saveEditLine(){
   const l=lines[activeLineId];
   l.label=document.getElementById('el-label').value.trim()||l.label;
   l.title=document.getElementById('el-title').value.trim();
-  l.bg=document.getElementById('el-bg').value;
-  l.fg=document.getElementById('el-fg').value;
-  l.stations.forEach(sid=>{const st=stations[sid];if(st)refreshMarker(st);});
+  l.bg=document.getElementById('el-bg').value;l.fg=document.getElementById('el-fg').value;
+  l.nodes.forEach(n=>{if(n.type==='station'){const st=stations[n.id];if(st)refreshMarker(st);}});
   redrawLine(l);
-  l.trains.forEach(t=>{if(t.running)spawnTrainMarkers(t,l);});
-  buildLinesPanel();updateControlsBar();closeEditLine();
-  showToast('Line updated!');
+  l.trains.forEach(t=>{if(isTrainActive(t)&&!t.isFreight)spawnTrainMarkers(t,l);});
+  Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{if(b.lineId===l.id)redrawBranch(dp,b);});});
+  buildLinesPanel();updateControlsBar();closeEditLine();showToast('Line updated!');
 }
-
 function deleteActiveLine(){
   if(!activeLineId)return;
   const l=lines[activeLineId];
-  if(!confirm('Delete line "'+l.label+'"?'))return;
+  if(!confirm('Delete line?'))return;
   stopAllTrainsOnLine(activeLineId);
-  cleanupDepotConnections(c=>c.lineId===activeLineId);
-  l.stations.forEach(sid=>{
-    const st=stations[sid];if(!st)return;
-    st.lineIds=st.lineIds.filter(lid=>lid!==activeLineId);
-    if(st.lineIds.length===0){if(st.marker)map.removeLayer(st.marker);delete stations[sid];}
-    else refreshMarker(st);
+  l.nodes.forEach(n=>{
+    if(n.type==='station'){
+      const st=stations[n.id];
+      if(st){
+        st.lineIds=st.lineIds.filter(lid=>lid!==activeLineId);
+        if(st.lineIds.length===0&&!Object.values(transfers).some(t=>t.a===n.id||t.b===n.id)){
+          if(st.marker)map.removeLayer(st.marker);delete stations[n.id];
+        }else refreshMarker(st);
+      }
+    }else if(n.type==='waypoint'&&n.marker)map.removeLayer(n.marker);
+  });
+  Object.values(depots).forEach(dp=>{
+    const rm=dp.branches.filter(b=>b.lineId===activeLineId);
+    rm.forEach(b=>{b.polylines.forEach(p=>map.removeLayer(p));b.waypoints.forEach(w=>{if(w.marker)map.removeLayer(w.marker);});});
+    dp.branches=dp.branches.filter(b=>b.lineId!==activeLineId);
   });
   l.polylines.forEach(p=>map.removeLayer(p));
-  delete lines[activeLineId];
-  activeLineId=null;
-  buildLinesPanel();updateRouteDiagram();updateModeLabel();updateStats();
-  showToast('Line deleted.');
+  delete lines[activeLineId];activeLineId=null;
+  buildLinesPanel();updateRouteDiagram();updateTrainSection();updateModeLabel();updateStats();showToast('Line deleted');
 }
 
 function mDist(a,b){return L.latLng(a).distanceTo(L.latLng(b));}
-
 function projectOnSegmentM(A,B,P){
   const crs=L.CRS.EPSG3857;
-  const zA=crs.latLngToPoint(L.latLng(A),13);
-  const zB=crs.latLngToPoint(L.latLng(B),13);
-  const zP=crs.latLngToPoint(L.latLng(P),13);
-  const dx=zB.x-zA.x, dy=zB.y-zA.y;
-  const lenSq=dx*dx+dy*dy;
+  const zA=crs.latLngToPoint(L.latLng(A),13),zB=crs.latLngToPoint(L.latLng(B),13),zP=crs.latLngToPoint(L.latLng(P),13);
+  const dx=zB.x-zA.x,dy=zB.y-zA.y,lenSq=dx*dx+dy*dy;
   let t=lenSq===0?0:((zP.x-zA.x)*dx+(zP.y-zA.y)*dy)/lenSq;
   t=Math.max(0,Math.min(1,t));
-  const qx=zA.x+t*dx, qy=zA.y+t*dy;
+  const qx=zA.x+t*dx,qy=zA.y+t*dy;
   const qLL=crs.pointToLatLng({x:qx,y:qy},13);
-  return {t, dist_m:L.latLng(P).distanceTo(qLL), projLL:qLL};
+  return{t,dist_m:L.latLng(P).distanceTo(qLL),projLL:qLL};
 }
-
-function findClosestSegment(line, latlng){
-  const sids=line.stations;
-  if(sids.length===0) return {insertAfterIndex:-1};
-  if(sids.length===1) return {insertAfterIndex:0};
-  const P=[latlng.lat,latlng.lng];
-  const segCount=line.circular?sids.length:sids.length-1;
-  let bestSegDist=Infinity,bestSegIdx=0,bestT=0;
+function getNodeLatLng(n){if(n.type==='station'){const st=stations[n.id];return st?st.latlng:null;}return n.latlng;}
+function findClosestSegment(line,latlng){
+  const nodes=line.nodes;
+  if(nodes.length===0)return{insertAfterIndex:-1};
+  if(nodes.length===1)return{insertAfterIndex:0};
+  const lat=Array.isArray(latlng)?latlng[0]:latlng.lat;
+  const lng=Array.isArray(latlng)?latlng[1]:latlng.lng;
+  const P=[lat,lng];
+  const valid=[];
+  nodes.forEach((n,idx)=>{const pt=getNodeLatLng(n);if(pt)valid.push({idx,pt});});
+  if(valid.length<2)return{insertAfterIndex:valid.length?valid[0].idx:-1};
+  const segCount=line.circular?valid.length:valid.length-1;
+  let bestDist=Infinity,bestIdx=0,bestT=0;
   for(let i=0;i<segCount;i++){
-    const a=stations[sids[i]];
-    const b=stations[sids[(i+1)%sids.length]];
-    if(!a||!b)continue;
-    const res=projectOnSegmentM(a.latlng,b.latlng,P);
-    if(res.dist_m<bestSegDist){bestSegDist=res.dist_m;bestSegIdx=i;bestT=res.t;}
+    const a=valid[i],b=valid[(i+1)%valid.length];
+    const res=projectOnSegmentM(a.pt,b.pt,P);
+    if(res.dist_m<bestDist){bestDist=res.dist_m;bestIdx=i;bestT=res.t;}
   }
+  const A=valid[bestIdx];
   if(!line.circular){
-    const first=stations[sids[0]];
-    const last=stations[sids[sids.length-1]];
-    if(first&&last){
-      const dFirst=mDist(P,first.latlng);
-      const dLast=mDist(P,last.latlng);
-      const onFirstSeg=bestSegIdx===0&&bestT<0.15;
-      const onLastSeg=bestSegIdx===sids.length-2&&bestT>0.85;
-      if(onFirstSeg||onLastSeg){
-        if(dFirst<=dLast)return {insertAfterIndex:-1};
-        else return {insertAfterIndex:sids.length-1};
-      }
-      const endThreshold=bestSegDist*0.7;
-      if(dFirst<endThreshold&&dFirst<=dLast)return {insertAfterIndex:-1};
-      if(dLast<endThreshold&&dLast<dFirst)return {insertAfterIndex:sids.length-1};
-    }
+    const dFirst=mDist(P,valid[0].pt),dLast=mDist(P,valid[valid.length-1].pt);
+    if(bestIdx===0&&bestT<0.15&&dFirst<=dLast)return{insertAfterIndex:-1};
+    if(bestIdx===valid.length-2&&bestT>0.85&&dLast<dFirst)return{insertAfterIndex:valid[valid.length-1].idx};
+    const th=bestDist*0.7;
+    if(dFirst<th&&dFirst<=dLast)return{insertAfterIndex:-1};
+    if(dLast<th&&dLast<dFirst)return{insertAfterIndex:valid[valid.length-1].idx};
   }
-  return {insertAfterIndex:bestSegIdx};
+  return{insertAfterIndex:A.idx};
 }
-
-function clearInsertPreview(){
-  if(insertPreviewLine){map.removeLayer(insertPreviewLine);insertPreviewLine=null;}
-  hoverInsertInfo=null;
-  const hint=document.getElementById('insert-hint');
-  if(hint)hint.style.display='none';
-}
+function clearInsertPreview(){if(insertPreviewLine){map.removeLayer(insertPreviewLine);insertPreviewLine=null;}hoverInsertInfo=null;const hint=document.getElementById('insert-hint');if(hint)hint.style.display='none';}
 
 function onMapClick(e){
   if(dragState&&dragState.moved){dragState=null;return;}
-
-  if(depotMode){
-    createDepot(e.latlng);
-    return;
+  if(pendingBranchWaypoint){
+    const{depotId,branchId}=pendingBranchWaypoint;
+    const dp=depots[depotId];
+    if(dp){
+      const branch=dp.branches.find(b=>b.id===branchId);
+      if(branch){
+        const wp={id:genId(),latlng:[e.latlng.lat,e.latlng.lng],marker:null};
+        branch.waypoints.push(wp);
+        createBranchWaypointMarker(dp,branch,wp);
+        redrawBranch(dp,branch);
+        showToast('Waypoint added');
+      }
+    }
+    pendingBranchWaypoint=null;updateModeLabel();return;
   }
-
+  if(depotMode){createDepot(e.latlng);return;}
   if(!activeLineId)return;
   const line=lines[activeLineId];if(!line)return;
-
-  const latlng=[e.latlng.lat,e.latlng.lng];
-  const sid=genId();
-  const st={
-    id:sid,latlng,
-    name:'Station '+(Object.keys(stations).length+1),
-    borough:boroughOf(e.latlng),
-    ridership:Math.floor(Math.random()*7000)+600,
-    lineIds:[activeLineId],marker:null
-  };
-  stations[sid]=st;
-
-  const {insertAfterIndex}=findClosestSegment(line,e.latlng);
-  if(insertAfterIndex===-1)line.stations.unshift(sid);
-  else if(insertAfterIndex>=line.stations.length-1)line.stations.push(sid);
-  else line.stations.splice(insertAfterIndex+1,0,sid);
-
-  clearInsertPreview();
-  createMarker(st);
+  const{insertAfterIndex}=findClosestSegment(line,e.latlng);
+  if(editMode==='station'){
+    const sid=genId();
+    const st={id:sid,latlng:[e.latlng.lat,e.latlng.lng],name:'Station '+(Object.keys(stations).length+1),lineIds:[activeLineId],marker:null};
+    stations[sid]=st;
+    const node={type:'station',id:sid};
+    if(insertAfterIndex===-1)line.nodes.unshift(node);
+    else if(insertAfterIndex>=line.nodes.length-1)line.nodes.push(node);
+    else line.nodes.splice(insertAfterIndex+1,0,node);
+    createMarker(st);updateRouteDiagram();updateStats();
+  }else if(editMode==='waypoint'){
+    const node={type:'waypoint',id:genId(),latlng:[e.latlng.lat,e.latlng.lng]};
+    if(insertAfterIndex===-1)line.nodes.unshift(node);
+    else if(insertAfterIndex>=line.nodes.length-1)line.nodes.push(node);
+    else line.nodes.splice(insertAfterIndex+1,0,node);
+    createWaypointMarker(line,node);updateRouteDiagram();
+  }
+  line._stationFracs=null;
   redrawLine(line);
-  updateRouteDiagram();
-  updateStats();
+  Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{if(b.lineId===line.id)redrawBranch(dp,b);});});
+  clearInsertPreview();
 }
 
-function boroughOf(ll){
-  if(ll.lat>40.796&&ll.lng>-73.93)return 'The Bronx';
-  if(ll.lat>40.700&&ll.lng>-73.85)return 'Queens';
-  if(ll.lat<40.650)return 'Brooklyn';
-  if(ll.lng<-74.04)return 'Staten Island';
-  return 'Manhattan';
+function createWaypointMarker(line,node){
+  const el=document.createElement('div');el.className='waypoint-marker';
+  const icon=L.divIcon({html:el,className:'',iconSize:[12,12],iconAnchor:[6,6]});
+  const m=L.marker(node.latlng,{icon,draggable:true,zIndexOffset:250});
+  m.on('drag',ev=>{node.latlng=[ev.target.getLatLng().lat,ev.target.getLatLng().lng];redrawLine(line);});
+  m.on('click',ev=>{
+    L.DomEvent.stopPropagation(ev);
+    if(confirm('Delete waypoint?')){
+      line.nodes=line.nodes.filter(n=>n!==node);map.removeLayer(m);node.marker=null;
+      line._stationFracs=null;redrawLine(line);updateRouteDiagram();
+    }
+  });
+  m.addTo(map);node.marker=m;
+}
+function createBranchWaypointMarker(dp,branch,wp){
+  const el=document.createElement('div');el.className='waypoint-marker';
+  const icon=L.divIcon({html:el,className:'',iconSize:[12,12],iconAnchor:[6,6]});
+  const m=L.marker(wp.latlng,{icon,draggable:true,zIndexOffset:300});
+  m.on('drag',ev=>{wp.latlng=[ev.target.getLatLng().lat,ev.target.getLatLng().lng];redrawBranch(dp,branch);});
+  m.on('click',ev=>{
+    L.DomEvent.stopPropagation(ev);
+    if(confirm('Delete waypoint?')){
+      branch.waypoints=branch.waypoints.filter(w=>w!==wp);map.removeLayer(m);wp.marker=null;redrawBranch(dp,branch);
+    }
+  });
+  m.addTo(map);wp.marker=m;
 }
 
 function createMarker(st){
   const el=document.createElement('div');el.className='sdot';styleMarkerEl(el,st);
-  const icon=L.divIcon({html:el,className:'',iconSize:[13,13],iconAnchor:[6,6]});
+  const icon=L.divIcon({html:el,className:'',iconSize:[14,14],iconAnchor:[7,7]});
   const m=L.marker(st.latlng,{icon,draggable:false,zIndexOffset:200});
-  m.on('click',ev=>{L.DomEvent.stopPropagation(ev);if(dragState&&dragState.moved)return;openPopup(st.id);});
+  m.on('click',ev=>{
+    L.DomEvent.stopPropagation(ev);
+    if(dragState&&dragState.moved)return;
+    if(connectingSource){
+      if(connectingSource!==st.id)addTransfer(connectingSource,st.id);
+      connectingSource=null;map.closePopup();showToast('Connection created');
+    }else openPopup(st.id);
+  });
   m.on('mousedown',ev=>{L.DomEvent.stopPropagation(ev);dragState={sid:st.id,moved:false};map.dragging.disable();});
   m.addTo(map);st.marker=m;
 }
 function styleMarkerEl(el,st){
-  if(st.lineIds.length>1){el.classList.add('xfer');el.style.borderColor='#fff';}
+  let isXfer=st.lineIds.length>1;
+  if(!isXfer)Object.values(transfers).forEach(t=>{if(t.a===st.id||t.b===st.id)isXfer=true;});
+  if(isXfer){el.classList.add('xfer');el.style.borderColor='#fff';}
   else{el.classList.remove('xfer');const fl=lines[st.lineIds[0]];el.style.borderColor=fl?fl.bg:'#888';}
 }
-function refreshMarker(st){
-  if(!st.marker)return;
-  const el=st.marker.getElement();if(!el)return;
-  const d=el.querySelector('.sdot');if(d)styleMarkerEl(d,st);
-}
+function refreshMarker(st){if(!st.marker)return;const el=st.marker.getElement();if(!el)return;const d=el.querySelector('.sdot');if(d)styleMarkerEl(d,st);}
 
 function onMouseMove(e){
   if(dragState){
     dragState.moved=true;
     if(dragState.depotId){
       const dp=depots[dragState.depotId];if(!dp)return;
-      dp.latlng=[e.latlng.lat,e.latlng.lng];
-      dp.marker.setLatLng(e.latlng);
-      redrawDepotConnections(dp);
-      return;
+      dp.latlng=[e.latlng.lat,e.latlng.lng];dp.marker.setLatLng(e.latlng);
+      dp.branches.forEach(b=>redrawBranch(dp,b));return;
     }
     const st=stations[dragState.sid];if(!st)return;
-    st.latlng=[e.latlng.lat,e.latlng.lng];
-    st.marker.setLatLng(e.latlng);
-    st.lineIds.forEach(lid=>{if(lines[lid])redrawLine(lines[lid]);});
-    Object.values(depots).forEach(dp=>{
-      if(dp.connections.some(c=>c.stationId===dragState.sid))redrawDepotConnections(dp);
-    });
+    st.latlng=[e.latlng.lat,e.latlng.lng];st.marker.setLatLng(e.latlng);
+    st.lineIds.forEach(lid=>{if(lines[lid]){lines[lid]._stationFracs=null;redrawLine(lines[lid]);}});
+    redrawTransfers();
+    Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{if(b.startStationId===dragState.sid)redrawBranch(dp,b);});});
     return;
   }
-
-  if(!activeLineId||depotMode)return;
+  if(!activeLineId||depotMode||pendingBranchWaypoint)return;
   const line=lines[activeLineId];
-  if(!line||line.stations.length<2)return;
-
-  const {insertAfterIndex}=findClosestSegment(line,e.latlng);
+  if(!line||line.nodes.length<2)return;
+  const{insertAfterIndex}=findClosestSegment(line,e.latlng);
   hoverInsertInfo={insertAfterIndex};
-
   if(insertPreviewLine){map.removeLayer(insertPreviewLine);insertPreviewLine=null;}
-
-  const sids=line.stations;
-  const lastIdx=sids.length-1;
-  let prevSid=null,nextSid=null,hintText='';
-
-  if(insertAfterIndex===-1){
-    nextSid=sids[0];
-    hintText='Add before: '+(stations[nextSid]?stations[nextSid].name:'first station');
-  } else if(insertAfterIndex>=lastIdx){
-    prevSid=sids[lastIdx];
-    hintText='Add after: '+(stations[prevSid]?stations[prevSid].name:'last station');
-  } else {
-    prevSid=sids[insertAfterIndex];
-    nextSid=sids[insertAfterIndex+1];
-    const aName=stations[prevSid]?stations[prevSid].name:'?';
-    const bName=stations[nextSid]?stations[nextSid].name:'?';
-    hintText='Insert: '+aName+' → ● → '+bName;
-  }
-
+  const nodes=line.nodes;
+  let prevPt=null,nextPt=null,hintText='';
+  if(insertAfterIndex===-1){nextPt=getNodeLatLng(nodes[0]);hintText='Add before start';}
+  else if(insertAfterIndex>=nodes.length-1){prevPt=getNodeLatLng(nodes[nodes.length-1]);hintText='Add after end';}
+  else{prevPt=getNodeLatLng(nodes[insertAfterIndex]);nextPt=getNodeLatLng(nodes[insertAfterIndex+1]);hintText=editMode==='waypoint'?'Insert waypoint':'Insert station';}
   const pts=[];
-  if(prevSid&&stations[prevSid])pts.push(stations[prevSid].latlng);
-  pts.push([e.latlng.lat,e.latlng.lng]);
-  if(nextSid&&stations[nextSid])pts.push(stations[nextSid].latlng);
-
-  if(pts.length>=2){
-    insertPreviewLine=L.polyline(pts,{
-      color:line.bg,weight:4,opacity:0.65,
-      dashArray:'7 5',lineJoin:'round',lineCap:'round'
-    });
-    insertPreviewLine.addTo(map);
-  }
-
+  if(prevPt)pts.push(prevPt);pts.push([e.latlng.lat,e.latlng.lng]);if(nextPt)pts.push(nextPt);
+  if(pts.length>=2){insertPreviewLine=L.polyline(pts,{color:editMode==='waypoint'?'#888':line.bg,weight:4,opacity:0.65,dashArray:'7 5',lineJoin:'round',lineCap:'round'});insertPreviewLine.addTo(map);}
   const hint=document.getElementById('insert-hint');
-  if(hint){
-    const cp=map.latLngToContainerPoint(e.latlng);
-    hint.style.display='block';
-    hint.style.left=cp.x+'px';
-    hint.style.top=cp.y+'px';
-    hint.textContent=hintText;
-  }
+  if(hint){const cp=map.latLngToContainerPoint(e.latlng);hint.style.display='block';hint.style.left=cp.x+'px';hint.style.top=cp.y+'px';hint.textContent=hintText;}
 }
-
 function onMouseUp(){
-  if(dragState){setTimeout(()=>{dragState=null;},60);map.dragging.enable();}
+  if(dragState){
+    const sid=dragState.sid;
+    setTimeout(()=>{if(sid&&stations[sid]){stations[sid].lineIds.forEach(lid=>{if(lines[lid])lines[lid]._stationFracs=null;});}dragState=null;},60);
+    map.dragging.enable();
+  }
 }
 function onMapMouseOut(){clearInsertPreview();}
+
+function addTransfer(a,b){
+  if(a===b)return;
+  if(Object.values(transfers).some(t=>(t.a===a&&t.b===b)||(t.a===b&&t.b===a)))return;
+  const id=genId();
+  transfers[id]={id,a,b};
+  redrawTransfers();refreshMarker(stations[a]);refreshMarker(stations[b]);updateStats();
+}
+function deleteTransfer(id){
+  const t=transfers[id];if(!t)return;
+  delete transfers[id];redrawTransfers();refreshMarker(stations[t.a]);refreshMarker(stations[t.b]);updateStats();
+}
+function redrawTransfers(){
+  transferLines.forEach(l=>map.removeLayer(l));transferLines=[];
+  const color=document.documentElement.getAttribute('data-theme')==='dark'?'#fff':'#000';
+  Object.values(transfers).forEach(t=>{
+    const s1=stations[t.a],s2=stations[t.b];if(!s1||!s2)return;
+    const pl=L.polyline([s1.latlng,s2.latlng],{color,weight:4,opacity:0.9,lineCap:'round'});
+    pl.addTo(map);transferLines.push(pl);
+  });
+}
 
 function openPopup(sid){
   const st=stations[sid];if(!st)return;
   map.closePopup();
   const wrap=document.createElement('div');wrap.className='popup';
-
   const head=document.createElement('div');head.className='pp-head';
-  const nameEl=document.createElement('div');nameEl.className='pp-name';
-  nameEl.contentEditable='true';nameEl.textContent=st.name;
+  const nameEl=document.createElement('div');nameEl.className='pp-name';nameEl.contentEditable='true';nameEl.textContent=st.name;
   nameEl.addEventListener('blur',()=>{st.name=nameEl.textContent.trim()||st.name;nameEl.textContent=st.name;updateRouteDiagram();});
   nameEl.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();nameEl.blur();}});
-  const px=document.createElement('div');px.className='pp-x';px.innerHTML='&times;';
-  px.addEventListener('click',()=>map.closePopup());
+  const px=document.createElement('div');px.className='pp-x';px.innerHTML='&times;';px.addEventListener('click',()=>map.closePopup());
   head.append(nameEl,px);
-
-  const sub=document.createElement('div');sub.className='pp-sub';
-  sub.innerHTML=st.borough+(st.lineIds.length>1?' &nbsp;·&nbsp; <span style="color:#4a8">Transfer</span>':'');
-
-  const rid=document.createElement('div');rid.className='pp-riders';
-  rid.innerHTML='🧍 '+st.ridership.toLocaleString();
-
+  const sub=document.createElement('div');sub.className='pp-sub';sub.textContent='Station';
   const linesRow=document.createElement('div');linesRow.className='pp-lines';
-  function rebuildBadges(){
-    linesRow.innerHTML='';
-    st.lineIds.forEach(lid=>{
-      const l=lines[lid];if(!l)return;
-      const wrap2=document.createElement('div');wrap2.className='plb';
-      wrap2.style.background=l.bg;wrap2.style.color=l.fg;wrap2.textContent=l.label;
-      wrap2.title=l.title||l.label;
-      const rm=document.createElement('div');rm.className='plb-rm';rm.textContent='×';
-      rm.addEventListener('click',()=>{
-        st.lineIds=st.lineIds.filter(x=>x!==lid);
-        const line=lines[lid];
-        if(line){line.stations=line.stations.filter(s=>s!==sid);redrawLine(line);}
-        if(st.lineIds.length===0){if(st.marker)map.removeLayer(st.marker);delete stations[sid];cleanupDepotConnections(c=>c.stationId===sid);map.closePopup();updateStats();return;}
-        refreshMarker(st);rebuildBadges();rebuildAdd();updateRouteDiagram();updateStats();
-      });
-      wrap2.appendChild(rm);linesRow.appendChild(wrap2);
-    });
-  }
-  rebuildBadges();
-
-  const addArea=document.createElement('div');addArea.className='pp-add';
-  const addLabel=document.createElement('div');addLabel.className='pp-add-label';addLabel.textContent='Add to line:';
-  addArea.appendChild(addLabel);
-  const addRow=document.createElement('div');addRow.className='pp-add-row';
-  addArea.appendChild(addRow);
-  function rebuildAdd(){
-    addRow.innerHTML='';
-    const allDefs=[...NYC_LINES,...EXTRA_LINES,...Object.values(lines).filter(l=>l.custom)];
-    allDefs.forEach(def=>{
-      if(def.disabled)return;
-      const l=lines[def.id];if(!l)return;
-      const already=st.lineIds.includes(def.id);
-      const m=document.createElement('div');m.className='pmini'+(already?' on':'');
-      m.style.background=l.bg;m.style.color=l.fg;m.textContent=l.label;
-      m.title=already?'Already on this line':'Add to '+l.label;
-      if(!already){m.addEventListener('click',()=>{
-        st.lineIds.push(def.id);
-        if(!l.stations.includes(sid)){l.stations.push(sid);redrawLine(l);}
-        refreshMarker(st);rebuildBadges();rebuildAdd();updateRouteDiagram();updateStats();
-      });}
-      addRow.appendChild(m);
-    });
-  }
-  rebuildAdd();
-
+  st.lineIds.forEach(lid=>{const l=lines[lid];if(!l)return;const b=document.createElement('div');b.className='plb';b.style.background=l.bg;b.style.color=l.fg;b.textContent=l.label;linesRow.appendChild(b);});
+  if(linesRow.innerHTML==='')linesRow.innerHTML='<span style="color:var(--text-tertiary);font-size:11px">No lines</span>';
   const acts=document.createElement('div');acts.className='pp-actions';
-  const del=document.createElement('button');del.className='pp-btn pp-del';del.textContent='Delete Station';
+  const cb=document.createElement('button');cb.className='pp-btn pp-connect';cb.textContent='🔗 Построить соединение';
+  cb.addEventListener('click',()=>{connectingSource=sid;map.closePopup();showToast('Click destination');});
+  acts.appendChild(cb);
+  if(activeLineId){
+    const al=lines[activeLineId];
+    const isOn=al.nodes.some(n=>n.type==='station'&&n.id===sid);
+    if(!isOn){
+      const lb=document.createElement('button');lb.className='pp-btn pp-transfer';lb.textContent='🔗 Соединить с линией '+al.label;
+      lb.addEventListener('click',()=>{
+        const{insertAfterIndex}=findClosestSegment(al,st.latlng);
+        const node={type:'station',id:sid};
+        if(insertAfterIndex===-1)al.nodes.unshift(node);
+        else if(insertAfterIndex>=al.nodes.length-1)al.nodes.push(node);
+        else al.nodes.splice(insertAfterIndex+1,0,node);
+        if(!st.lineIds.includes(al.id))st.lineIds.push(al.id);
+        al._stationFracs=null;redrawLine(al);refreshMarker(st);map.closePopup();updateRouteDiagram();updateTrainSection();
+        showToast('Connected to '+al.label);
+      });
+      acts.appendChild(lb);
+    }
+  }
+  const existing=Object.values(transfers).filter(t=>t.a===sid||t.b===sid);
+  if(existing.length){
+    const tt=document.createElement('div');tt.style.cssText='font-size:10px;text-transform:uppercase;color:var(--text-tertiary);margin-top:8px;margin-bottom:4px;font-weight:600';tt.textContent='Transfers';
+    acts.appendChild(tt);
+    existing.forEach(t=>{
+      const oSid=t.a===sid?t.b:t.a;const o=stations[oSid];if(!o)return;
+      const row=document.createElement('div');row.style.cssText='display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)';
+      const nm=document.createElement('span');nm.textContent=o.name;nm.style.cursor='pointer';nm.onclick=()=>map.setView(o.latlng,14);
+      const del=document.createElement('button');del.textContent='×';del.style.cssText='background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px';del.onclick=()=>deleteTransfer(t.id);
+      row.append(nm,del);acts.appendChild(row);
+    });
+  }
+  const del=document.createElement('button');del.className='pp-btn pp-del';del.textContent='Delete Station';del.style.marginTop='12px';
   del.addEventListener('click',()=>{deleteStation(sid);map.closePopup();});
   acts.appendChild(del);
-
-  wrap.append(head,sub,rid,linesRow,addArea,acts);
-  L.popup({maxWidth:290,closeButton:false,autoClose:true}).setLatLng(st.latlng).setContent(wrap).openOn(map);
+  wrap.append(head,sub,linesRow,acts);
+  L.popup({maxWidth:300,closeButton:false,autoClose:true}).setLatLng(st.latlng).setContent(wrap).openOn(map);
 }
 
 function deleteStation(sid){
   const st=stations[sid];if(!st)return;
   if(st.marker)map.removeLayer(st.marker);
-  st.lineIds.forEach(lid=>{const l=lines[lid];if(!l)return;l.stations=l.stations.filter(s=>s!==sid);redrawLine(l);});
+  st.lineIds.forEach(lid=>{const l=lines[lid];if(!l)return;l.nodes=l.nodes.filter(n=>!(n.type==='station'&&n.id===sid));l._stationFracs=null;redrawLine(l);});
+  Object.values(depots).forEach(dp=>{
+    dp.branches.forEach(b=>{
+      if(b.startStationId===sid){
+        const line=lines[b.lineId];
+        if(line){
+          let bestSid=null,bestD=Infinity;
+          line.nodes.forEach(n=>{
+            if(n.type!=='station')return;
+            const s=stations[n.id];if(!s)return;
+            const d=L.latLng(dp.latlng).distanceTo(L.latLng(s.latlng));
+            if(d<bestD){bestD=d;bestSid=n.id;}
+          });
+          if(bestSid){b.startStationId=bestSid;redrawBranch(dp,b);}
+          else{b.polylines.forEach(p=>map.removeLayer(p));b.waypoints.forEach(w=>{if(w.marker)map.removeLayer(w.marker);});dp.branches=dp.branches.filter(x=>x!==b);}
+        }
+      }
+    });
+  });
+  Object.keys(transfers).forEach(id=>{const t=transfers[id];if(t.a===sid||t.b===sid)deleteTransfer(id);});
   delete stations[sid];
-  cleanupDepotConnections(c=>c.stationId===sid);
   updateRouteDiagram();updateStats();
 }
 
 function toggleDepotMode(force){
   depotMode=(typeof force==='boolean')?force:!depotMode;
   if(depotMode)deselectLine();
+  pendingBranchWaypoint=null;
   const btn=document.getElementById('add-depot-btn');
   btn.classList.toggle('depot-active',depotMode);
-  btn.textContent=depotMode?'🏭 Click map to place depot (click to cancel)':'🏭 Add Depot';
+  btn.textContent=depotMode?'🏭 Click map to place depot':'🏭 Add Depot';
   updateModeLabel();
 }
 
 function createDepot(latlng){
   const id=genId();
-  const dp={
-    id,
-    latlng:[latlng.lat,latlng.lng],
-    name:'Depot '+(Object.keys(depots).length+1),
-    connections:[],
-    marker:null,
-    connLines:[]
-  };
+  const dp={id,latlng:[latlng.lat,latlng.lng],name:'Depot '+(Object.keys(depots).length+1),marker:null,branches:[]};
   depots[id]=dp;
   createDepotMarker(dp);
+
+  let bestLine = null, bestSid = null, bestDist = Infinity;
+  Object.values(lines).forEach(l => {
+    l.nodes.forEach(n => {
+      if (n.type !== 'station') return;
+      const st = stations[n.id];
+      if (!st) return;
+      const d = L.latLng(latlng).distanceTo(L.latLng(st.latlng));
+      if (d < bestDist) { bestDist = d; bestLine = l; bestSid = n.id; }
+    });
+  });
+
+  if (bestLine && bestSid) {
+    const branch = { id: genId(), lineId: bestLine.id, startStationId: bestSid, waypoints: [], polylines: [] };
+    dp.branches.push(branch);
+    redrawBranch(dp, branch);
+    showToast('Auto-connected to ' + stations[bestSid].name);
+  }
+
   toggleDepotMode(false);
   openDepotPopup(id);
-  showToast('Depot added. Click it to add connections.');
+  showToast('Depot added');
 }
-
 function createDepotMarker(dp){
-  const el=document.createElement('div');
-  el.className='depot-marker';
-  el.textContent='🏭';
-  el.title=dp.name;
-  const icon=L.divIcon({html:el,className:'',iconSize:[32,32],iconAnchor:[16,16]});
+  const el=document.createElement('div');el.className='depot-marker';el.textContent='🏭';el.title=dp.name;
+  const icon=L.divIcon({html:el,className:'',iconSize:[34,34],iconAnchor:[17,17]});
   const m=L.marker(dp.latlng,{icon,draggable:false,zIndexOffset:400});
   m.on('click',ev=>{L.DomEvent.stopPropagation(ev);if(dragState&&dragState.moved)return;openDepotPopup(dp.id);});
   m.on('mousedown',ev=>{L.DomEvent.stopPropagation(ev);dragState={sid:null,depotId:dp.id,moved:false};map.dragging.disable();});
-  m.addTo(map);
-  dp.marker=m;
+  m.addTo(map);dp.marker=m;
 }
-
-function redrawDepotConnections(dp){
-  dp.connLines.forEach(l=>map.removeLayer(l));
-  dp.connLines=[];
-  dp.connections.forEach(c=>{
-    const st=stations[c.stationId];
-    const line=lines[c.lineId];
-    if(!st||!line)return;
-    let path;
-    if(line.smooth){
-      const dlat=st.latlng[0]-dp.latlng[0];
-      const dlng=st.latlng[1]-dp.latlng[1];
-      const len=Math.sqrt(dlat*dlat+dlng*dlng)||1;
-      const mid=[(dp.latlng[0]+st.latlng[0])/2,(dp.latlng[1]+st.latlng[1])/2];
-      const off=len*0.10;
-      const bend=[mid[0]+(dlng/len)*off, mid[1]-(dlat/len)*off];
-      path=catmullRom([dp.latlng,bend,st.latlng],false,14);
-    } else {
-      path=[dp.latlng,st.latlng];
-    }
-    const pl=L.polyline(path,{
-      color:'#666',weight:3,opacity:0.85,lineJoin:'round',lineCap:'round'
-    });
-    pl.addTo(map);
-    dp.connLines.push(pl);
-  });
+function deleteDepot(dpid){
+  const dp=depots[dpid];if(!dp)return;
+  dp.branches.forEach(b=>{b.polylines.forEach(p=>map.removeLayer(p));b.waypoints.forEach(w=>{if(w.marker)map.removeLayer(w.marker);});});
+  if(dp.marker)map.removeLayer(dp.marker);
+  delete depots[dpid];
 }
-
-function cleanupDepotConnections(predicate){
-  Object.values(depots).forEach(dp=>{
-    const before=dp.connections.length;
-    dp.connections=dp.connections.filter(c=>!predicate(c));
-    if(dp.connections.length!==before)redrawDepotConnections(dp);
-  });
+function redrawBranch(dp,branch){
+  branch.polylines.forEach(p=>map.removeLayer(p));branch.polylines=[];
+  const line=lines[branch.lineId];
+  const startSt=stations[branch.startStationId];
+  if(!line||!startSt)return;
+  const pts=[startSt.latlng,...branch.waypoints.map(w=>w.latlng),dp.latlng];
+  let draw;
+  if(line.smooth!==false&&pts.length>=2)draw=catmullRom(pts,false);
+  else draw=pts;
+  const glow=L.polyline(draw,{color:line.bg,weight:12,opacity:0.15,lineJoin:'round',lineCap:'round'});
+  const main=L.polyline(draw,{color:line.bg,weight:5,opacity:0.92,lineJoin:'round',lineCap:'round'});
+  glow.addTo(map);main.addTo(map);
+  branch.polylines=[glow,main];
 }
-
 function openDepotPopup(dpid){
   const dp=depots[dpid];if(!dp)return;
   map.closePopup();
   const wrap=document.createElement('div');wrap.className='popup';
-
   const head=document.createElement('div');head.className='pp-head';
-  const nameEl=document.createElement('div');nameEl.className='pp-name';
-  nameEl.contentEditable='true';nameEl.textContent=dp.name;
-  nameEl.addEventListener('blur',()=>{
-    dp.name=nameEl.textContent.trim()||dp.name;
-    nameEl.textContent=dp.name;
-    if(dp.marker){const el=dp.marker.getElement();if(el){const d=el.querySelector('.depot-marker');if(d)d.title=dp.name;}}
-  });
+  const nameEl=document.createElement('div');nameEl.className='pp-name';nameEl.contentEditable='true';nameEl.textContent=dp.name;
+  nameEl.addEventListener('blur',()=>{dp.name=nameEl.textContent.trim()||dp.name;nameEl.textContent=dp.name;if(dp.marker){const el=dp.marker.getElement();if(el){const d=el.querySelector('.depot-marker');if(d)d.title=dp.name;}}});
   nameEl.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();nameEl.blur();}});
-  const px=document.createElement('div');px.className='pp-x';px.innerHTML='&times;';
-  px.addEventListener('click',()=>map.closePopup());
+  const px=document.createElement('div');px.className='pp-x';px.innerHTML='&times;';px.addEventListener('click',()=>map.closePopup());
   head.append(nameEl,px);
-
-  const sub=document.createElement('div');sub.className='pp-sub';
-  sub.textContent='🏭 Depot';
-
-  const connList=document.createElement('div');
-  connList.style.cssText='padding:6px 11px;border-bottom:1px solid #1a1a1a';
-  const connTitle=document.createElement('div');
-  connTitle.style.cssText='font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px';
-  connTitle.textContent='Connections';
-  connList.appendChild(connTitle);
-
-  function rebuildConnList(){
-    while(connList.children.length>1)connList.removeChild(connList.lastChild);
-    if(dp.connections.length===0){
-      const empty=document.createElement('div');
-      empty.style.cssText='font-size:10px;color:#555;font-style:italic';
-      empty.textContent='No connections yet';
-      connList.appendChild(empty);
-      return;
-    }
-    dp.connections.forEach((c,idx)=>{
-      const line=lines[c.lineId];const st=stations[c.stationId];
-      if(!line||!st)return;
-      const row=document.createElement('div');
-      row.style.cssText='display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px';
-      const b=document.createElement('div');
-      b.style.cssText=`width:18px;height:18px;border-radius:50%;background:${line.bg};color:${line.fg};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0`;
-      b.textContent=line.label;
-      const nm=document.createElement('span');
-      nm.style.cssText='flex:1;color:#bbb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-      nm.textContent=st.name;
-      const del=document.createElement('button');
-      del.textContent='×';
-      del.style.cssText='background:none;border:1px solid #5a1a1a;color:#f66;border-radius:3px;padding:0 5px;cursor:pointer;font-size:11px;font-family:var(--font)';
-      del.addEventListener('click',()=>{
-        dp.connections.splice(idx,1);
-        redrawDepotConnections(dp);
-        rebuildConnList();
-      });
-      row.append(b,nm,del);
-      connList.appendChild(row);
+  const sub=document.createElement('div');sub.className='pp-sub';sub.textContent='🏭 Depot';
+  const branchList=document.createElement('div');branchList.style.cssText='padding:8px 14px;border-bottom:1px solid var(--border)';
+  const bTitle=document.createElement('div');bTitle.style.cssText='font-size:10px;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:6px;font-weight:600';bTitle.textContent='Branches';
+  branchList.appendChild(bTitle);
+  function rebuildBL(){
+    while(branchList.children.length>1)branchList.removeChild(branchList.lastChild);
+    if(dp.branches.length===0){const e=document.createElement('div');e.style.cssText='font-size:11px;color:var(--text-tertiary);font-style:italic';e.textContent='No branches yet.';branchList.appendChild(e);return;}
+    dp.branches.forEach(b=>{
+      const line=lines[b.lineId];const sSt=stations[b.startStationId];
+      if(!line||!sSt)return;
+      const row=document.createElement('div');row.style.cssText='padding:6px 0;border-bottom:1px solid var(--border-soft)';
+      const top=document.createElement('div');top.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:4px';
+      const bd=document.createElement('div');bd.style.cssText=`width:20px;height:20px;border-radius:50%;background:${line.bg};color:${line.fg};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0`;bd.textContent=line.label;
+      const nm=document.createElement('span');nm.style.cssText='flex:1;color:var(--text);font-size:11px';nm.textContent='From '+sSt.name;
+      const wc=document.createElement('span');wc.style.cssText='font-size:10px;color:var(--text-tertiary)';wc.textContent=b.waypoints.length+' wp';
+      const rm=document.createElement('button');rm.textContent='×';rm.style.cssText='background:none;border:1px solid var(--danger);color:var(--danger);border-radius:3px;padding:0 4px;cursor:pointer;font-size:11px';
+      rm.addEventListener('click',()=>{b.polylines.forEach(p=>map.removeLayer(p));b.waypoints.forEach(w=>{if(w.marker)map.removeLayer(w.marker);});dp.branches=dp.branches.filter(x=>x!==b);rebuildBL();rebuildSel();updateRouteDiagram();});
+      top.append(bd,nm,wc,rm);row.appendChild(top);
+      const wpRow=document.createElement('div');wpRow.style.cssText='display:flex;gap:4px;margin-top:4px';
+      const aw=document.createElement('button');aw.textContent='+ Waypoint';aw.style.cssText='flex:1;padding:3px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);border-radius:3px;cursor:pointer;font-size:10px;font-weight:600';
+      aw.addEventListener('click',()=>{pendingBranchWaypoint={depotId:dpid,branchId:b.id};map.closePopup();updateModeLabel();showToast('Click map for waypoint');});
+      wpRow.appendChild(aw);row.appendChild(wpRow);
+      branchList.appendChild(row);
     });
   }
-  rebuildConnList();
-
+  rebuildBL();
   const addArea=document.createElement('div');addArea.className='pp-add';
-  const addLabel=document.createElement('div');addLabel.className='pp-add-label';addLabel.textContent='Add connection:';
-  addArea.appendChild(addLabel);
-
-  const selLine=document.createElement('select');
-  selLine.className='sselect';selLine.style.cssText='width:100%;margin-bottom:4px;font-size:11px;max-width:none';
-  const selSt=document.createElement('select');
-  selSt.className='sselect';selSt.style.cssText='width:100%;margin-bottom:5px;font-size:11px;max-width:none';
-
-  function refreshLineSelect(){
-    selLine.innerHTML='';
-    const avail=Object.values(lines).filter(l=>l.stations.length>0);
-    if(avail.length===0){
-      const o=document.createElement('option');o.textContent='— no lines with stations —';o.value='';
-      selLine.appendChild(o);
-    }
-    avail.forEach(l=>{
-      const o=document.createElement('option');
-      o.value=l.id;o.textContent=l.label+' — '+(l.title||l.label);
-      selLine.appendChild(o);
-    });
+  const addL=document.createElement('div');addL.className='pp-add-label';addL.textContent='Add branch to line:';addArea.appendChild(addL);
+  const sel=document.createElement('select');sel.className='sselect';sel.style.cssText='width:100%;margin-bottom:6px;font-size:12px;max-width:none';
+  function rebuildSel(){
+    sel.innerHTML='';
+    const avail=Object.values(lines).filter(l=>l.nodes.filter(n=>n.type==='station').length>0);
+    if(!avail.length){const o=document.createElement('option');o.value='';o.textContent='— No lines —';sel.appendChild(o);}
+    avail.forEach(l=>{const alr=dp.branches.some(b=>b.lineId===l.id);const o=document.createElement('option');o.value=l.id;o.textContent=l.label+' — '+(l.title||l.label)+(alr?' (has branch)':'');if(alr)o.disabled=true;sel.appendChild(o);});
   }
-  function refreshStationSelect(){
-    selSt.innerHTML='';
-    const l=lines[selLine.value];if(!l)return;
-    l.stations.forEach(sid=>{
-      const st=stations[sid];if(!st)return;
-      const o=document.createElement('option');o.value=sid;o.textContent=st.name;
-      selSt.appendChild(o);
-    });
-  }
-  selLine.addEventListener('change',refreshStationSelect);
-  refreshLineSelect();
-  refreshStationSelect();
-
-  const addBtn=document.createElement('button');
-  addBtn.textContent='+ Add Connection';
-  addBtn.style.cssText='width:100%;padding:5px;background:#1e3a1e;border:1px solid #2a5a2a;color:#8f8;border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--font)';
+  rebuildSel();
+  const addBtn=document.createElement('button');addBtn.textContent='+ Add Branch';addBtn.style.cssText='width:100%;padding:6px;background:var(--success-soft);border:1px solid var(--success);color:var(--success);border-radius:4px;cursor:pointer;font-size:12px;font-family:var(--font)';
   addBtn.addEventListener('click',()=>{
-    const lid=selLine.value;const sid=selSt.value;
-    if(!lid||!sid)return;
-    if(dp.connections.some(c=>c.lineId===lid&&c.stationId===sid)){showToast('Already connected');return;}
-    dp.connections.push({lineId:lid,stationId:sid});
-    redrawDepotConnections(dp);
-    rebuildConnList();
+    const lid=sel.value;if(!lid)return;
+    const line=lines[lid];if(!line)return;
+    let bestSid=null,bestD=Infinity;
+    line.nodes.forEach(n=>{if(n.type!=='station')return;const st=stations[n.id];if(!st)return;const d=L.latLng(dp.latlng).distanceTo(L.latLng(st.latlng));if(d<bestD){bestD=d;bestSid=n.id;}});
+    if(!bestSid){showToast('No stations');return;}
+    const branch={id:genId(),lineId:lid,startStationId:bestSid,waypoints:[],polylines:[]};
+    dp.branches.push(branch);redrawBranch(dp,branch);rebuildBL();rebuildSel();updateRouteDiagram();
+    showToast('Branch added from '+stations[bestSid].name);
   });
-
-  addArea.append(selLine,selSt,addBtn);
-
+  addArea.append(sel,addBtn);
   const acts=document.createElement('div');acts.className='pp-actions';
-  const delBtn=document.createElement('button');
-  delBtn.className='pp-btn pp-del';delBtn.textContent='Delete Depot';
-  delBtn.addEventListener('click',()=>{deleteDepot(dpid);map.closePopup();});
-  acts.appendChild(delBtn);
-
-  wrap.append(head,sub,connList,addArea,acts);
-  L.popup({maxWidth:290,closeButton:false,autoClose:true}).setLatLng(dp.latlng).setContent(wrap).openOn(map);
-}
-
-function deleteDepot(dpid){
-  const dp=depots[dpid];if(!dp)return;
-  dp.connLines.forEach(l=>map.removeLayer(l));
-  if(dp.marker)map.removeLayer(dp.marker);
-  delete depots[dpid];
+  const dlt=document.createElement('button');dlt.className='pp-btn pp-del';dlt.textContent='Delete Depot';
+  dlt.addEventListener('click',()=>{deleteDepot(dpid);map.closePopup();});
+  acts.appendChild(dlt);
+  wrap.append(head,sub,branchList,addArea,acts);
+  L.popup({maxWidth:320,closeButton:false,autoClose:true}).setLatLng(dp.latlng).setContent(wrap).openOn(map);
 }
 
 function catmullRom(pts,closed,steps=14){
@@ -1220,85 +860,94 @@ function catmullRom(pts,closed,steps=14){
   if(!closed)out.push(pts[pts.length-1]);
   return out;
 }
-
+function getLinePoints(line){return line.nodes.map(n=>getNodeLatLng(n)).filter(Boolean);}
 function redrawLine(line){
   line.polylines.forEach(p=>map.removeLayer(p));line.polylines=[];
-  if(line.stations.length<2)return;
-  let pts=line.stations.map(sid=>{const st=stations[sid];return st?st.latlng:null;}).filter(Boolean);
-  if(pts.length<2)return;
+  const pts=getLinePoints(line);if(pts.length<2)return;
   const closed=line.circular&&pts.length>2;
-  if(closed)pts=[...pts,pts[0]];
-  const draw=(line.smooth&&pts.length>=2)?catmullRom(closed?pts.slice(0,-1):pts,closed):pts;
-  const glow=L.polyline(draw,{color:line.bg,weight:12,opacity:.12,lineJoin:'round',lineCap:'round'});
-  const main=L.polyline(draw,{color:line.bg,weight:5, opacity:.92,lineJoin:'round',lineCap:'round'});
+  let drawPts=closed?[...pts,pts[0]]:pts;
+  let draw;
+  if(line.smooth!==false)draw=catmullRom(closed?drawPts.slice(0,-1):drawPts,closed);
+  else draw=drawPts;
+  const glow=L.polyline(draw,{color:line.bg,weight:12,opacity:0.15,lineJoin:'round',lineCap:'round'});
+  const main=L.polyline(draw,{color:line.bg,weight:5,opacity:0.92,lineJoin:'round',lineCap:'round'});
   glow.addTo(map);main.addTo(map);
   line.polylines=[glow,main];
 }
-
 function buildLinePath(line){
-  if(line.stations.length<2)return[];
-  let pts=line.stations.map(sid=>{const st=stations[sid];return st?st.latlng:null;}).filter(Boolean);
-  if(pts.length<2)return[];
+  const pts=getLinePoints(line);if(pts.length<2)return[];
   const closed=line.circular&&pts.length>2;
-  if(closed)pts=[...pts,pts[0]];
-  if(line.smooth)return catmullRom(closed?pts.slice(0,-1):pts,closed,24);
+  let drawPts=closed?[...pts,pts[0]]:pts;
+  if(line.smooth!==false)return catmullRom(closed?drawPts.slice(0,-1):drawPts,closed,24);
   const out=[];
-  for(let i=0;i<pts.length-1;i++){
-    const a=pts[i],b=pts[i+1];
+  for(let i=0;i<drawPts.length-1;i++){
+    const a=drawPts[i],b=drawPts[i+1];
     const steps=Math.max(16,Math.round(L.latLng(a).distanceTo(L.latLng(b))/25));
-    for(let s=0;s<steps;s++){
-      const t=s/steps;
-      out.push([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]);
-    }
+    for(let s=0;s<steps;s++){const t=s/steps;out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);}
   }
-  out.push(pts[pts.length-1]);
+  out.push(drawPts[drawPts.length-1]);
   return out;
 }
-
-function posOnPath(path, t){
+function posOnPath(path,t){
   if(path.length<2)return path[0];
   const total=path.length-1;
   const fp=Math.max(0,Math.min(1,t))*total;
-  const i0=Math.floor(fp);
-  const i1=Math.min(i0+1,total);
-  const f=fp-i0;
+  const i0=Math.floor(fp),i1=Math.min(i0+1,total),f=fp-i0;
   const a=path[i0],b=path[i1];
-  return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f];
+  return[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f];
+}
+function buildStationFracs(line){
+  const n=line.nodes.length;if(n<2)return[];
+  const denom=line.circular?n:(n-1);
+  const res=[];
+  line.nodes.forEach((node,idx)=>{if(node.type!=='station')return;if(!stations[node.id])return;res.push({sid:node.id,frac:idx/denom});});
+  res.sort((a,b)=>a.frac-b.frac);
+  return res;
+}
+function wasCrossed(prevFrac,curFrac,stationFrac,dir,circular){
+  if(!circular){
+    if(dir>0)return stationFrac>prevFrac&&stationFrac<=curFrac;
+    return stationFrac<prevFrac&&stationFrac>=curFrac;
+  }else{
+    if(dir>0){if(prevFrac<=curFrac)return stationFrac>prevFrac&&stationFrac<=curFrac;return stationFrac>prevFrac||stationFrac<=curFrac;}
+    else{if(prevFrac>=curFrac)return stationFrac<prevFrac&&stationFrac>=curFrac;return stationFrac<prevFrac||stationFrac>=curFrac;}
+  }
 }
 
+function isTrainActive(t){const s=t.status||'running';return s==='running'||s==='testing'||s==='freight';}
+function setTrainStatus(lineId,trainId,newStatus){
+  const line=lines[lineId];if(!line)return;
+  const train=line.trains.find(t=>t.id===trainId);if(!train)return;
+  const wasActive=isTrainActive(train);train.status=newStatus;
+  const isNowActive=isTrainActive(train);
+  if(wasActive&&!isNowActive){train.markers.forEach(m=>map.removeLayer(m));train.markers=[];if(!anyTrainRunning())stopAnimLoop();}
+  else if(!wasActive&&isNowActive){spawnTrainMarkers(train,line);startAnimLoop();}
+  buildLinesPanel();updateTrainList();updateTrainTable();updateStatTrains();
+}
 function refreshModelSuggestions(){
-  const list=document.getElementById('nt-model-list');
-  if(!list)return;
+  const list=document.getElementById('nt-model-list');if(!list)return;
   const models=new Set();
-  Object.values(lines).forEach(l=>{
-    (l.trains||[]).forEach(t=>{if(t.model)models.add(t.model);});
-  });
+  Object.values(lines).forEach(l=>{(l.trains||[]).forEach(t=>{if(t.model)models.add(t.model);});});
   list.innerHTML='';
-  models.forEach(m=>{
-    const o=document.createElement('option');o.value=m;
-    list.appendChild(o);
-  });
+  models.forEach(m=>{const o=document.createElement('option');o.value=m;list.appendChild(o);});
 }
-
 function toggleNewTrainForm(){
   const f=document.getElementById('new-train-form');
   f.style.display=f.style.display==='none'?'block':'none';
   if(f.style.display==='block'){updateTrainCountPreview();refreshModelSuggestions();}
 }
-
 function updateTrainCountPreview(){
   const total=parseInt(document.getElementById('nt-total').value)||0;
   const per=parseInt(document.getElementById('nt-per').value)||1;
   const count=Math.floor(total/Math.max(1,per));
-  document.getElementById('nt-count-preview').textContent='→ '+count+' train set'+(count!==1?'s':'');
+  document.getElementById('nt-count-preview').textContent='→ '+count+' sets';
 }
 document.addEventListener('input',e=>{
   if(e.target.id==='nt-total'||e.target.id==='nt-per')updateTrainCountPreview();
   if(e.target.id==='et-total'||e.target.id==='et-per'){
     const total=parseInt(document.getElementById('et-total').value)||0;
     const per=parseInt(document.getElementById('et-per').value)||1;
-    const count=Math.floor(total/Math.max(1,per));
-    document.getElementById('et-count-preview').textContent='→ '+count+' train set'+(count!==1?'s':'');
+    document.getElementById('et-count-preview').textContent='→ '+Math.floor(total/Math.max(1,per))+' sets';
   }
 });
 
@@ -1309,119 +958,343 @@ function addTrain(){
   const per=parseInt(document.getElementById('nt-per').value)||10;
   const count=Math.max(1,Math.floor(total/Math.max(1,per)));
   const line=lines[activeLineId];if(!line)return;
-
   const tid=genId();
-  const train={id:tid,lineId:activeLineId,model,totalCars:total,carsPerSet:per,count,running:true,markers:[],progress:[],directions:[]};
+  const train={id:tid,lineId:activeLineId,model,totalCars:total,carsPerSet:per,count,status:'running',isFreight:false,markers:[],progress:[],directions:[],dwellUntil:[],prevFrac:[]};
   for(let i=0;i<count;i++){
     train.progress.push(i/count);
-    if(line.circular && i>=Math.ceil(count/2))train.directions.push(-1);
-    else train.directions.push(1);
+    train.directions.push(line.circular&&i>=Math.ceil(count/2)?-1:1);
+    train.dwellUntil.push(0);train.prevFrac.push(train.progress[i]);
   }
   line.trains.push(train);
   spawnTrainMarkers(train,line);
-  startAnimLoop();
-  buildLinesPanel();
-  updateTrainList();
+  startAnimLoop();buildLinesPanel();updateTrainList();updateTrainTable();
   document.getElementById('new-train-form').style.display='none';
   document.getElementById('nt-model').value='';
-  showToast('Added '+count+' train'+(count>1?'s':'')+' ('+model+')');
+  showToast('Added '+count+' train'+(count>1?'s':''));
+}
+
+function getDepotConnectionsForLine(line){
+  const result=[];
+  Object.values(depots).forEach(dp=>{
+    const branch=dp.branches.find(b=>b.lineId===line.id);
+    if(branch)result.push({depot:dp,branch});
+  });
+  return result;
+}
+
+function addFreightTrain(){
+  if(!activeLineId)return;
+  const line=lines[activeLineId];
+  const depotConns=getDepotConnectionsForLine(line);
+  if(depotConns.length<2){showToast('Need 2+ depots on this line');return;}
+  const activeCount=line.trains.filter(t=>t.isFreight&&t.freightActive).length;
+  if(activeCount>=2){showToast('Max 2 active freight trains per line');return;}
+  spawnFreight(line,depotConns);
+}
+
+function spawnFreight(line,depotConns){
+  const shuffled=[...depotConns].sort(()=>Math.random()-0.5);
+  const from=shuffled[0],to=shuffled[1];
+  const pathInfo=buildFreightPath(from.depot,from.branch,to.depot,to.branch,line);
+  if(!pathInfo){showToast('Cannot build path');return;}
+  const train={
+    id:genId(),lineId:line.id,
+    model:'Freight '+Math.floor(Math.random()*90+10),
+    totalCars:20,carsPerSet:5,count:1,
+    status:'freight',isFreight:true,
+    freightActive:true,
+    freightPath:pathInfo.path,freightProgress:0,
+    fromDepotId:from.depot.id,toDepotId:to.depot.id,
+    _branchAEndIdx:pathInfo.branchAEndIdx,
+    _branchBStartIdx:pathInfo.branchBStartIdx,
+    _lineStartFrac:pathInfo.lineStartFrac,
+    _lineEndFrac:pathInfo.lineEndFrac,
+    _lineProgress:pathInfo.lineStartFrac,
+    markers:[],progress:[0],directions:[1],dwellUntil:[0],prevFrac:[0]
+  };
+  line.trains.push(train);
+  spawnFreightMarker(train,line);
+  startAnimLoop();buildLinesPanel();updateTrainList();updateTrainTable();
+  showToast('Freight dispatched: '+depots[train.fromDepotId].name+' → '+depots[train.toDepotId].name);
+}
+
+function buildFreightPath(fromDp,fromBranch,toDp,toBranch,line){
+  const fromSt=stations[fromBranch.startStationId];
+  const toSt=stations[toBranch.startStationId];
+  if(!fromSt||!toSt||fromSt.id===toSt.id)return null;
+  const branchAPts=[fromDp.latlng,...fromBranch.waypoints.map(w=>w.latlng).reverse(),fromSt.latlng];
+  const branchAPath=line.smooth!==false?catmullRom(branchAPts,false):branchAPts;
+  const linePath=buildLinePath(line);
+  const idxA=findClosestPathIdx(linePath,fromSt.latlng);
+  const idxB=findClosestPathIdx(linePath,toSt.latlng);
+  let lineSlice;
+  if(idxA<=idxB)lineSlice=linePath.slice(idxA,idxB+1);
+  else lineSlice=linePath.slice(idxB,idxA+1).reverse();
+  const branchBPts=[toSt.latlng,...toBranch.waypoints.map(w=>w.latlng),toDp.latlng];
+  const branchBPath=line.smooth!==false?catmullRom(branchBPts,false):branchBPts;
+  const path=[...branchAPath,...lineSlice.slice(1),...branchBPath.slice(1)];
+  const branchAEndIdx=branchAPath.length-1;
+  const branchBStartIdx=path.length-branchBPath.length+1;
+  const lineStartFrac=idxA/(linePath.length-1);
+  const lineEndFrac=idxB/(linePath.length-1);
+  return{path,branchAEndIdx,branchBStartIdx,lineStartFrac,lineEndFrac};
+}
+function findClosestPathIdx(path,target){
+  let bestIdx=0,bestD=Infinity;
+  const tgt=L.latLng(target);
+  for(let i=0;i<path.length;i++){
+    const d=L.latLng(path[i]).distanceTo(tgt);
+    if(d<bestD){bestD=d;bestIdx=i;}
+  }
+  return bestIdx;
+}
+function spawnFreightMarker(train,line){
+  train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
+  if(!train.freightActive||!train.freightPath.length)return;
+  const pos=train.freightPath[0];
+  const size=14;
+  const el=document.createElement('div');el.className='train-marker';
+  el.style.cssText=`width:${size}px;height:${size}px;background:#9b59b6;border:2px solid rgba(255,255,255,0.6);color:#fff;`;
+  el.title=train.model;
+  const icon=L.divIcon({html:el,className:'',iconSize:[size,size],iconAnchor:[size/2,size/2]});
+  const m=L.marker(L.latLng(pos),{icon,zIndexOffset:500,interactive:false});
+  m.addTo(map);train.markers.push(m);
+}
+
+function animateFreights(now){
+  Object.values(lines).forEach(line=>{
+    line.trains.forEach(train=>{
+      if(!train.isFreight)return;
+      if(!train.freightActive){
+        if(now<(train._respawnCheckAt||0))return;
+        train._respawnCheckAt=now+1000;
+        if(Math.random()<0.05){
+          const activeCount=line.trains.filter(t=>t.isFreight&&t.freightActive).length;
+          if(activeCount>=2)return;
+          const depotConns=getDepotConnectionsForLine(line);
+          if(depotConns.length<2)return;
+          const shuffled=[...depotConns].sort(()=>Math.random()-0.5);
+          const from=shuffled[0],to=shuffled[1];
+          const pathInfo=buildFreightPath(from.depot,from.branch,to.depot,to.branch,line);
+          if(!pathInfo)return;
+          train.freightPath=pathInfo.path;
+          train.freightProgress=0;
+          train.freightActive=true;
+          train.fromDepotId=from.depot.id;
+          train.toDepotId=to.depot.id;
+          train._branchAEndIdx=pathInfo.branchAEndIdx;
+          train._branchBStartIdx=pathInfo.branchBStartIdx;
+          train._lineStartFrac=pathInfo.lineStartFrac;
+          train._lineEndFrac=pathInfo.lineEndFrac;
+          train._lineProgress=pathInfo.lineStartFrac;
+          train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
+          spawnFreightMarker(train,line);
+          showToast(`Freight ${train.model} respawned: ${depots[train.fromDepotId].name} → ${depots[train.toDepotId].name}`);
+        }
+        return;
+      }
+      const totalPathLen=train.freightPath.length-1;
+      if(totalPathLen<1){train.freightActive=false;return;}
+
+      if (train._blocked) {
+         const idx = Math.floor(train.freightProgress * totalPathLen);
+         const pos = train.freightPath[Math.min(idx, totalPathLen)];
+         if (train.markers[0]) train.markers[0].setLatLng(L.latLng(pos));
+         return;
+      }
+
+      train.freightProgress+=FREIGHT_SPEED*lastDt;
+      if(train.freightProgress>=1){
+        train.freightProgress=1;
+        train.freightActive=false;
+        train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
+        train._respawnCheckAt=now+1000;
+        showToast(`${train.model} reached ${depots[train.toDepotId]?.name||'depot'}`);
+        return;
+      }
+      const idx=Math.floor(train.freightProgress*totalPathLen);
+      const pos=train.freightPath[idx];
+      if(train.markers[0])train.markers[0].setLatLng(L.latLng(pos));
+      if(idx<=train._branchAEndIdx){train._lineProgress=train._lineStartFrac;}
+      else if(idx>=train._branchBStartIdx){train._lineProgress=train._lineEndFrac;}
+      else{
+        const ratio=(idx-train._branchAEndIdx)/Math.max(1,train._branchBStartIdx-train._branchAEndIdx);
+        train._lineProgress=train._lineStartFrac+ratio*(train._lineEndFrac-train._lineStartFrac);
+      }
+    });
+  });
 }
 
 function spawnTrainMarkers(train,line){
-  train.markers.forEach(m=>map.removeLayer(m));
-  train.markers=[];
-  if(!train.running)return;
-  const path=buildLinePath(line);
-  if(!path.length)return;
+  train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
+  if(!isTrainActive(train)||train.isFreight)return;
+  const path=buildLinePath(line);if(!path.length)return;
+  if(!train.dwellUntil||train.dwellUntil.length!==train.count){
+    train.dwellUntil=[];train.prevFrac=[];
+    for(let i=0;i<train.count;i++){train.dwellUntil.push(0);train.prevFrac.push(train.progress[i]);}
+  }
   for(let i=0;i<train.count;i++){
     const posArr=posOnPath(path,train.progress[i]);
-    const pos=L.latLng(posArr);
     const size=12;
-    const el=document.createElement('div');
-    el.className='train-marker';
+    const el=document.createElement('div');el.className='train-marker';
     el.style.cssText=`width:${size}px;height:${size}px;background:${line.bg};border:2px solid ${line.fg==='#fff'?'rgba(255,255,255,0.6)':'rgba(0,0,0,0.4)'};color:${line.fg};`;
-    el.title=train.model+' ('+train.carsPerSet+' cars)';
+    el.title=train.model;
     const icon=L.divIcon({html:el,className:'',iconSize:[size,size],iconAnchor:[size/2,size/2]});
-    const m=L.marker(pos,{icon,zIndexOffset:500,interactive:false});
-    m.addTo(map);
-    train.markers.push(m);
+    const m=L.marker(L.latLng(posArr),{icon,zIndexOffset:500,interactive:false});
+    m.addTo(map);train.markers.push(m);
   }
 }
-
-const TRAIN_SPEED=0.00001;
-let lastAnimTime=null;
 
 function startAnimLoop(){
   if(trainAnimFrame)return;
   lastAnimTime=performance.now();
   function loop(now){
-    const dt=Math.min(now-lastAnimTime,100);lastAnimTime=now;
-    animateTrains(dt);
+    try {
+      const dt=Math.min(now-lastAnimTime,100);lastAnimTime=now;lastDt=dt;
+      animateTrains(dt,now);
+      animateFreights(now);
+    } catch(e) {
+      console.error("Animation loop error:", e);
+    }
     trainAnimFrame=requestAnimationFrame(loop);
   }
   trainAnimFrame=requestAnimationFrame(loop);
 }
-function stopAnimLoop(){
-  if(trainAnimFrame){cancelAnimationFrame(trainAnimFrame);trainAnimFrame=null;}
-}
-function anyTrainRunning(){
-  return Object.values(lines).some(l=>l.trains&&l.trains.some(t=>t.running));
+let lastDt=16;
+function stopAnimLoop(){if(trainAnimFrame){cancelAnimationFrame(trainAnimFrame);trainAnimFrame=null;}}
+function anyTrainRunning(){return Object.values(lines).some(l=>l.trains&&l.trains.some(t=>isTrainActive(t)));}
+
+function updateBlockages(line) {
+  const activeCars = [];
+  line.trains.forEach(train => {
+    if (!isTrainActive(train)) return;
+    if (train.isFreight) {
+      if (train.freightActive) activeCars.push({ train, idx: -1, progress: train._lineProgress, dir: 1 });
+    } else {
+      for (let i = 0; i < train.count; i++) {
+        activeCars.push({ train, idx: i, progress: train.progress[i], dir: train.directions[i] });
+      }
+    }
+  });
+
+  line.trains.forEach(t => { t._blockedCars = []; t._blocked = false; });
+
+  activeCars.forEach((carA, a) => {
+    let blocked = false;
+    for (let b = 0; b < activeCars.length; b++) {
+      if (a === b) continue;
+      const carB = activeCars[b];
+      if (carA.dir !== carB.dir) continue;
+      let gap;
+      if (carA.dir > 0) {
+        gap = carB.progress - carA.progress;
+        if (line.circular && gap < 0) gap += 1;
+      } else {
+        gap = carA.progress - carB.progress;
+        if (line.circular && gap < 0) gap += 1;
+      }
+      if (gap > 0 && gap < MIN_GAP) {
+        blocked = true;
+        break;
+      }
+    }
+    if (carA.idx === -1) {
+      carA.train._blocked = blocked;
+    } else {
+      carA.train._blockedCars[carA.idx] = blocked;
+    }
+  });
 }
 
-function animateTrains(dt){
+function animateTrains(dt,now){
   let hasAny=false;
   Object.values(lines).forEach(line=>{
     if(!line.trains||!line.trains.length)return;
-    const path=buildLinePath(line);
-    if(path.length<2)return;
+    const path=buildLinePath(line);if(path.length<2)return;
+    if(!line._stationFracs)line._stationFracs=buildStationFracs(line);
+
+    updateBlockages(line);
+
     line.trains.forEach(train=>{
-      if(!train.running)return;
+      if(train.isFreight||!isTrainActive(train))return;
       hasAny=true;
+      
+      if(Math.random()<0.0001){
+        const delayMs=3000+Math.random()*6000;
+        for(let i=0;i<train.count;i++)train.dwellUntil[i]=Math.max(train.dwellUntil[i]||0,now+delayMs);
+      }
+      
       for(let i=0;i<train.count;i++){
+        if (train._blockedCars && train._blockedCars[i]) {
+          train.progress[i] = train.prevFrac[i];
+          const arr = posOnPath(path, train.progress[i]);
+          if (train.markers[i]) train.markers[i].setLatLng(L.latLng(arr));
+          continue;
+        }
+
+        if(now<train.dwellUntil[i]){
+          const arr=posOnPath(path,train.progress[i]);
+          if(train.markers[i])train.markers[i].setLatLng(L.latLng(arr));
+          continue;
+        }
+        const prevFrac=train.prevFrac[i];
         train.progress[i]+=TRAIN_SPEED*dt*train.directions[i];
         if(train.progress[i]>=1){
-          if(line.circular){train.progress[i]-=1;}
+          if(line.circular)train.progress[i]-=1;
           else{train.progress[i]=1;train.directions[i]=-1;}
-        } else if(train.progress[i]<=0){
-          if(line.circular){train.progress[i]+=1;}
+        }else if(train.progress[i]<=0){
+          if(line.circular)train.progress[i]+=1;
           else{train.directions[i]=1;train.progress[i]=0;}
         }
-        const arr=posOnPath(path, train.progress[i]);
+        const curFrac=train.progress[i];
+        let stationHit=null;
+        for(const s of line._stationFracs){
+          if(wasCrossed(prevFrac,curFrac,s.frac,train.directions[i],line.circular)){stationHit=s;break;}
+        }
+        if(stationHit){
+          train.progress[i]=stationHit.frac;
+          train.prevFrac[i]=stationHit.frac;
+          let dwellMs=DWELL_BASE_MS;
+          if(Math.random()<DELAY_CHANCE){
+            const roll=Math.random()*100;
+            if(roll<50)dwellMs+=3000+Math.random()*4000;
+            else if(roll<90)dwellMs+=2000+Math.random()*3000;
+            else if(roll<95)dwellMs+=5000+Math.random()*5000;
+            else dwellMs+=1000+Math.random()*3000;
+          }
+          train.dwellUntil[i]=now+dwellMs;
+        }else{
+          train.prevFrac[i]=curFrac;
+        }
+        const arr=posOnPath(path,train.progress[i]);
         if(train.markers[i])train.markers[i].setLatLng(L.latLng(arr));
       }
     });
   });
-  if(!hasAny)stopAnimLoop();
+  if(!hasAny&&!Object.values(lines).some(l=>l.trains.some(t=>t.isFreight&&t.freightActive)))stopAnimLoop();
 }
 
 function stopAllTrainsOnLine(lineId){
   const line=lines[lineId];if(!line)return;
   line.trains.forEach(train=>{
-    train.running=false;
-    train.markers.forEach(m=>map.removeLayer(m));
-    train.markers=[];
+    train.status='stopped';train.freightActive=false;
+    train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
   });
   if(!anyTrainRunning())stopAnimLoop();
 }
-
 function removeTrain(lineId,trainId){
   const line=lines[lineId];if(!line)return;
   const train=line.trains.find(t=>t.id===trainId);if(!train)return;
-  train.running=false;
-  train.markers.forEach(m=>map.removeLayer(m));
-  train.markers=[];
+  train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
   line.trains=line.trains.filter(t=>t.id!==trainId);
   if(!anyTrainRunning())stopAnimLoop();
-  buildLinesPanel();updateTrainList();updateStatTrains();
+  buildLinesPanel();updateTrainList();updateTrainTable();updateStatTrains();
 }
-
 function setTrainRunning(lineId,trainId,running){
-  const line=lines[lineId];if(!line)return;
-  const train=line.trains.find(t=>t.id===trainId);if(!train)return;
-  train.running=running;
-  if(running){spawnTrainMarkers(train,line);startAnimLoop();}
-  else{train.markers.forEach(m=>map.removeLayer(m));train.markers=[];if(!anyTrainRunning())stopAnimLoop();}
-  buildLinesPanel();updateTrainList();updateStatTrains();
+  if(!running){setTrainStatus(lineId,trainId,'stopped');return;}
+  const line=lines[lineId];const train=line?.trains.find(t=>t.id===trainId);
+  if(train&&train.isFreight){train.freightActive=true;spawnFreightMarker(train,line);startAnimLoop();}
+  else setTrainStatus(lineId,trainId,'running');
 }
 
 function openEditTrain(lineId,trainId){
@@ -1431,212 +1304,169 @@ function openEditTrain(lineId,trainId){
   document.getElementById('et-model').value=train.model;
   document.getElementById('et-total').value=train.totalCars;
   document.getElementById('et-per').value=train.carsPerSet;
-  const total=train.totalCars, per=train.carsPerSet;
-  const count=Math.floor(total/Math.max(1,per));
-  document.getElementById('et-count-preview').textContent='→ '+count+' train set'+(count!==1?'s':'');
+  const stSel=document.getElementById('et-status');
+  if(train.isFreight){stSel.value='running';stSel.disabled=true;}
+  else{stSel.value=train.status||'running';stSel.disabled=false;}
+  document.getElementById('et-count-preview').textContent='→ '+Math.floor(train.totalCars/Math.max(1,train.carsPerSet))+' sets';
   refreshModelSuggestions();
   document.getElementById('edit-train-modal').classList.add('open');
 }
-function closeEditTrain(){
-  document.getElementById('edit-train-modal').classList.remove('open');
-  editingTrain=null;
-}
+function closeEditTrain(){document.getElementById('edit-train-modal').classList.remove('open');editingTrain=null;}
 function saveEditTrain(){
   if(!editingTrain)return;
-  const {lineId,trainId}=editingTrain;
+  const{lineId,trainId}=editingTrain;
   const line=lines[lineId];if(!line)return;
   const train=line.trains.find(t=>t.id===trainId);if(!train)return;
-
   const model=document.getElementById('et-model').value.trim()||train.model;
   const total=Math.max(1,parseInt(document.getElementById('et-total').value)||train.totalCars);
   const per=Math.max(1,parseInt(document.getElementById('et-per').value)||train.carsPerSet);
   const newCount=Math.max(1,Math.floor(total/Math.max(1,per)));
-
-  train.model=model;
-  train.totalCars=total;
-  train.carsPerSet=per;
-
-  if(newCount!==train.count){
+  const newStatus=train.isFreight?'freight':document.getElementById('et-status').value;
+  train.model=model;train.totalCars=total;train.carsPerSet=per;
+  if(newCount!==train.count&&!train.isFreight){
     train.count=newCount;
-    const newProg=[],newDir=[];
-    for(let i=0;i<newCount;i++){
-      newProg.push(i/newCount);
-      if(line.circular && i>=Math.ceil(newCount/2))newDir.push(-1);
-      else newDir.push(1);
-    }
-    train.progress=newProg;
-    train.directions=newDir;
-    if(train.running){
-      spawnTrainMarkers(train,line);
-      startAnimLoop();
-    }
+    const np=[],nd=[];
+    for(let i=0;i<newCount;i++){np.push(i/newCount);nd.push(line.circular&&i>=Math.ceil(newCount/2)?-1:1);}
+    train.progress=np;train.directions=nd;train.dwellUntil=np.map(()=>0);train.prevFrac=[...np];
   }
-  buildLinesPanel();updateTrainList();
-  closeEditTrain();
-  showToast('Train updated');
+  if(newStatus!==train.status)setTrainStatus(lineId,trainId,newStatus);
+  if(isTrainActive(train)&&!train.isFreight)spawnTrainMarkers(train,line);
+  buildLinesPanel();updateTrainList();updateTrainTable();
+  closeEditTrain();showToast('Train updated');
 }
-document.getElementById('edit-train-modal').addEventListener('click',e=>{
-  if(e.target===document.getElementById('edit-train-modal'))closeEditTrain();
-});
+document.getElementById('edit-train-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-train-modal'))closeEditTrain();});
 
 function openTransferTrain(lineId,trainId){
   const line=lines[lineId];if(!line)return;
-  const train=line.trains.find(t=>t.id===trainId);if(!train)return;
+  const train=line.trains.find(t=>t.id===trainId);if(!train||train.isFreight)return;
   transferringTrain={lineId,trainId};
-  const sel=document.getElementById('tt-line');
-  sel.innerHTML='';
-  const avail=Object.values(lines).filter(l=>l.id!==lineId && l.stations.length>=2);
-  if(avail.length===0){
-    const o=document.createElement('option');o.value='';o.textContent='— no other lines with ≥2 stations —';
-    sel.appendChild(o);
-  } else {
-    avail.forEach(l=>{
-      const o=document.createElement('option');o.value=l.id;o.textContent=l.label+' — '+(l.title||l.label);
-      sel.appendChild(o);
-    });
-  }
+  const sel=document.getElementById('tt-line');sel.innerHTML='';
+  const avail=Object.values(lines).filter(l=>l.id!==lineId&&l.nodes.filter(n=>n.type==='station').length>=2);
+  if(!avail.length){const o=document.createElement('option');o.value='';o.textContent='— no lines —';sel.appendChild(o);}
+  else avail.forEach(l=>{const o=document.createElement('option');o.value=l.id;o.textContent=l.label+' — '+(l.title||l.label);sel.appendChild(o);});
   document.getElementById('transfer-train-modal').classList.add('open');
 }
-function closeTransferTrain(){
-  document.getElementById('transfer-train-modal').classList.remove('open');
-  transferringTrain=null;
-}
+function closeTransferTrain(){document.getElementById('transfer-train-modal').classList.remove('open');transferringTrain=null;}
 function confirmTransferTrain(){
   if(!transferringTrain)return;
-  const {lineId,trainId}=transferringTrain;
-  const fromLine=lines[lineId];if(!fromLine)return;
-  const train=fromLine.trains.find(t=>t.id===trainId);if(!train)return;
-  const toLineId=document.getElementById('tt-line').value;
-  if(!toLineId){showToast('No target line');return;}
-  const toLine=lines[toLineId];if(!toLine)return;
-
-  train.markers.forEach(m=>map.removeLayer(m));
-  train.markers=[];
-  fromLine.trains=fromLine.trains.filter(t=>t.id!==trainId);
-
-  train.lineId=toLineId;
-  train.progress=[];
-  train.directions=[];
+  const{lineId,trainId}=transferringTrain;
+  const from=lines[lineId];if(!from)return;
+  const train=from.trains.find(t=>t.id===trainId);if(!train)return;
+  const toId=document.getElementById('tt-line').value;if(!toId){showToast('No target');return;}
+  const to=lines[toId];if(!to)return;
+  train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
+  from.trains=from.trains.filter(t=>t.id!==trainId);
+  train.lineId=toId;train.progress=[];train.directions=[];train.dwellUntil=[];train.prevFrac=[];
   for(let i=0;i<train.count;i++){
     train.progress.push(i/train.count);
-    if(toLine.circular && i>=Math.ceil(train.count/2))train.directions.push(-1);
-    else train.directions.push(1);
+    train.directions.push(to.circular&&i>=Math.ceil(train.count/2)?-1:1);
+    train.dwellUntil.push(0);train.prevFrac.push(train.progress[i]);
   }
-
-  toLine.trains.push(train);
-  if(train.running){
-    spawnTrainMarkers(train,toLine);
-    startAnimLoop();
-  }
-
-  buildLinesPanel();
-  updateTrainList();
-  updateStatTrains();
-  closeTransferTrain();
-  showToast('Train moved to line '+toLine.label);
+  to.trains.push(train);
+  if(isTrainActive(train)){spawnTrainMarkers(train,to);startAnimLoop();}
+  buildLinesPanel();updateTrainList();updateTrainTable();updateStatTrains();
+  closeTransferTrain();showToast('Train moved to '+to.label);
 }
-document.getElementById('transfer-train-modal').addEventListener('click',e=>{
-  if(e.target===document.getElementById('transfer-train-modal'))closeTransferTrain();
-});
+document.getElementById('transfer-train-modal').addEventListener('click',e=>{if(e.target===document.getElementById('transfer-train-modal'))closeTransferTrain();});
 
-function toggleRouteDiagram(){
-  routeOpen=!routeOpen;
-  document.getElementById('route-body').className=routeOpen?'open':'';
-  document.getElementById('rti').className=routeOpen?'open':'';
-}
-
-function updateRouteDiagram(){
-  const body=document.getElementById('route-content');
-  const trainSec=document.getElementById('train-section');
-  if(!activeLineId){body.innerHTML='<div class="no-msg">Select a line to see its route.</div>';trainSec.style.display='none';return;}
+function updateTrainSection(){
+  const sec=document.getElementById('train-section');
+  if(!activeLineId){sec.classList.remove('visible');return;}
+  sec.classList.add('visible');
+  updateTrainList();updateTrainTable();
   const line=lines[activeLineId];
-  if(!line||!line.stations.length){body.innerHTML='<div class="no-msg">No stations on this line yet.</div>';trainSec.style.display='block';updateTrainList();return;}
-  body.innerHTML='';
-  const sids=line.circular?[...line.stations,line.stations[0]]:line.stations;
-
-  sids.forEach((sid,i)=>{
-    const st=stations[sid];if(!st)return;
-    if(i>0){
-      const seg=document.createElement('div');
-      seg.className='route-line';
-      seg.style.background=line.bg;
-      body.appendChild(seg);
-    }
-    const row=document.createElement('div');
-    row.className='route-item';
-    row.style.cursor='pointer';
-    row.addEventListener('click',()=>map.setView(st.latlng,14));
-
-    const dot=document.createElement('div');
-    dot.className='route-dot';
-    dot.style.borderColor=line.bg;
-    const isReturn=line.circular&&i===sids.length-1;
-    if(st.lineIds.length>1){
-      dot.style.width='13px';
-      dot.style.height='13px';
-      dot.style.marginLeft='-1px';
-    }
-
-    const name=document.createElement('span');
-    name.className='route-name';
-    name.textContent=st.name+(isReturn?' ↩':'')+(st.lineIds.length>1?' ⇄':'');
-
-    row.append(dot,name);
-    body.appendChild(row);
-  });
-
-  if(line.circular){
-    const n=document.createElement('div');
-    n.style.cssText='font-size:9px;color:#b080c0;text-align:center;margin-top:3px';
-    n.textContent='⟳ Circular line';
-    body.appendChild(n);
+  const fb=document.getElementById('new-freight-btn');
+  if(fb&&line){
+    const dc=getDepotConnectionsForLine(line).length;
+    fb.style.display=dc>=2?'block':'none';
   }
-  trainSec.style.display='block';
-  updateTrainList();
 }
-
+function updateTrainTable(){
+  const tbody=document.getElementById('train-status-tbody');if(!tbody)return;
+  tbody.innerHTML='';
+  if(!activeLineId)return;
+  const line=lines[activeLineId];if(!line)return;
+  const statuses={
+    running:{label:'На маршруте',color:'#2ecc71',order:0},
+    testing:{label:'Испытания',color:'#3498db',order:1},
+    stopped:{label:'Не на маршруте',color:'#f39c12',order:2},
+    decommissioned:{label:'Списаны',color:'#e74c3c',order:3},
+    freight:{label:'Грузовой',color:'#9b59b6',order:4},
+    other:{label:'Прочее',color:'#95a5a6',order:5}
+  };
+  const grouped={};
+  line.trains.forEach(t=>{
+    const st=t.status||'running';
+    if(!grouped[st])grouped[st]={models:new Set(),count:0};
+    grouped[st].models.add(t.model);
+    grouped[st].count+=t.count;
+  });
+  const keys=Object.keys(grouped).sort((a,b)=>(statuses[a]?.order??99)-(statuses[b]?.order??99));
+  if(!keys.length){
+    const tr=document.createElement('tr');const td=document.createElement('td');
+    td.colSpan=3;td.style.cssText='text-align:center;color:var(--text-tertiary);font-style:italic;padding:8px';td.textContent='No trains';
+    tr.appendChild(td);tbody.appendChild(tr);return;
+  }
+  keys.forEach(st=>{
+    const info=statuses[st]||{label:st,color:'#666'};
+    const g=grouped[st];
+    const tr=document.createElement('tr');
+    const td1=document.createElement('td');td1.style.color=info.color;td1.style.fontWeight='600';td1.textContent=info.label;
+    const td2=document.createElement('td');td2.textContent=[...g.models].join(', ');
+    const td3=document.createElement('td');td3.textContent=g.count;
+    tr.append(td1,td2,td3);tbody.appendChild(tr);
+  });
+}
 function updateTrainList(){
-  const list=document.getElementById('train-list');
-  list.innerHTML='';
+  const list=document.getElementById('train-list');list.innerHTML='';
   if(!activeLineId)return;
   const line=lines[activeLineId];
-  if(!line||!line.trains.length){list.innerHTML='<div class="no-msg" style="font-size:10px">No trains assigned.</div>';return;}
+  if(!line||!line.trains.length){list.innerHTML='<div class="no-msg" style="font-size:11px">No trains.</div>';return;}
+  const colorFor=s=>{
+    if(s==='running')return'#2ecc71';if(s==='testing')return'#3498db';
+    if(s==='stopped')return'#f39c12';if(s==='decommissioned')return'#e74c3c';
+    if(s==='freight')return'#9b59b6';return'#95a5a6';
+  };
+  const labels={running:'На маршруте',testing:'Испытания',stopped:'Не на маршруте',decommissioned:'Списаны',freight:'Грузовой',other:'Прочее'};
   line.trains.forEach(train=>{
+    const st=train.status||'running';
     const item=document.createElement('div');item.className='train-item';
     const tdot=document.createElement('div');tdot.className='train-item-dot';
-    tdot.style.cssText=`background:${line.bg};color:${line.bg}`;
-    tdot.style.boxShadow=`0 0 5px ${line.bg}`;
+    tdot.style.cssText=`background:${colorFor(st)};color:${colorFor(st)};box-shadow:0 0 5px ${colorFor(st)}`;
     const info=document.createElement('div');info.className='train-item-info';
-    const nm=document.createElement('div');nm.className='train-item-name';nm.textContent=train.model;
+    const nm=document.createElement('div');nm.className='train-item-name';nm.textContent=train.model+(train.isFreight?' 🚚':'');
     const sub=document.createElement('div');sub.className='train-item-sub';
-    sub.textContent=train.count+' sets · '+train.carsPerSet+' cars/set · '+(train.running?'🟢 Running':'🔴 Stopped');
+    const extra=train.isFreight?(train.freightActive?' (active)':' (inactive)'):'';
+    sub.textContent=train.count+' · '+train.carsPerSet+' cars · '+(labels[st]||st)+extra;
     info.append(nm,sub);
     const btns=document.createElement('div');btns.className='train-item-btns';
-
-    const moveBtn=document.createElement('button');
-    moveBtn.className='ti-btn move';moveBtn.textContent='⇄';
-    moveBtn.title='Transfer to another line';
-    moveBtn.addEventListener('click',()=>openTransferTrain(train.lineId,train.id));
-    btns.appendChild(moveBtn);
-
-    const editBtn=document.createElement('button');
-    editBtn.className='ti-btn edit';editBtn.textContent='✎';
-    editBtn.title='Edit train';
-    editBtn.addEventListener('click',()=>openEditTrain(train.lineId,train.id));
-    btns.appendChild(editBtn);
-
-    if(train.running){
-      const stopBtn=document.createElement('button');stopBtn.className='ti-btn stop';stopBtn.textContent='Stop';
-      stopBtn.addEventListener('click',()=>setTrainRunning(train.lineId,train.id,false));
-      btns.appendChild(stopBtn);
-    } else {
-      const runBtn=document.createElement('button');runBtn.className='ti-btn run';runBtn.textContent='Run';
-      runBtn.addEventListener('click',()=>setTrainRunning(train.lineId,train.id,true));
-      btns.appendChild(runBtn);
+    if(!train.isFreight){
+      const mv=document.createElement('button');mv.className='ti-btn move';mv.textContent='⇄';mv.title='Transfer';
+      mv.addEventListener('click',()=>openTransferTrain(train.lineId,train.id));btns.appendChild(mv);
     }
-    const delBtn=document.createElement('button');delBtn.className='ti-btn del';delBtn.textContent='Del';
-    delBtn.addEventListener('click',()=>removeTrain(train.lineId,train.id));
-    btns.appendChild(delBtn);
+    const ed=document.createElement('button');ed.className='ti-btn edit';ed.textContent='✎';ed.title='Edit';
+    ed.addEventListener('click',()=>openEditTrain(train.lineId,train.id));btns.appendChild(ed);
+    if(train.isFreight){
+      if(train.freightActive){
+        const sp=document.createElement('button');sp.className='ti-btn stop';sp.textContent='Stop';
+        sp.addEventListener('click',()=>{train.freightActive=false;train.markers.forEach(m=>map.removeLayer(m));train.markers=[];updateTrainList();});
+        btns.appendChild(sp);
+      }else{
+        const rn=document.createElement('button');rn.className='ti-btn run';rn.textContent='Run';
+        rn.addEventListener('click',()=>{train.freightActive=true;spawnFreightMarker(train,line);startAnimLoop();updateTrainList();});
+        btns.appendChild(rn);
+      }
+    }else{
+      if(isTrainActive(train)){
+        const sp=document.createElement('button');sp.className='ti-btn stop';sp.textContent='Stop';
+        sp.addEventListener('click',()=>setTrainRunning(train.lineId,train.id,false));btns.appendChild(sp);
+      }else{
+        const rn=document.createElement('button');rn.className='ti-btn run';rn.textContent='Run';
+        rn.addEventListener('click',()=>setTrainRunning(train.lineId,train.id,true));btns.appendChild(rn);
+      }
+    }
+    const dl=document.createElement('button');dl.className='ti-btn del';dl.textContent='Del';
+    dl.addEventListener('click',()=>removeTrain(train.lineId,train.id));btns.appendChild(dl);
     item.append(tdot,info,btns);list.appendChild(item);
   });
   updateStatTrains();
@@ -1644,75 +1474,95 @@ function updateTrainList(){
 
 function updateStats(){
   const n=Object.keys(stations).length;
-  const riders=n*3400;
-  const r=Math.min(100,n*3.2);
-  const rating=r>=90?'A+':r>=80?'A':r>=70?'B+':r>=60?'B':r>=50?'C+':n>0?'C':'—';
+  const riders=n*3400;const r=Math.min(100,n*3.2);
   document.getElementById('stat-riders').textContent=n>0?(riders>=1e6?(riders/1e6).toFixed(2)+' mil':riders.toLocaleString()):'—';
-  document.getElementById('stat-rating').textContent=rating;
   updateStatTrains();
 }
 function updateStatTrains(){
-  const total=Object.values(lines).reduce((s,l)=>s+l.trains.filter(t=>t.running).reduce((a,t)=>a+t.count,0),0);
+  const total=Object.values(lines).reduce((s,l)=>s+l.trains.filter(t=>isTrainActive(t)).reduce((a,t)=>a+t.count,0),0);
   document.getElementById('stat-trains').textContent=total;
 }
 
-function toggleExtra(){
-  extraVisible=!extraVisible;
-  document.getElementById('extra-lines-wrap').style.display=extraVisible?'block':'none';
-  document.getElementById('toggle-extra-btn').textContent=extraVisible?'Hide Additional Lines':'Show Additional Lines';
+function toggleRouteDiagram(){routeOpen=!routeOpen;document.getElementById('route-body').className=routeOpen?'open':'';document.getElementById('rti').className=routeOpen?'open':'';}
+function updateRouteDiagram(){
+  const body=document.getElementById('route-content');
+  if(!activeLineId){body.innerHTML='<div class="no-msg">Select a line.</div>';return;}
+  const line=lines[activeLineId];
+  const sNodes=line.nodes.filter(n=>n.type==='station');
+  if(!sNodes.length){body.innerHTML='<div class="no-msg">No stations.</div>';return;}
+  body.innerHTML='';
+  const sids=sNodes.map(n=>n.id);
+  const disp=line.circular?[...sids,sids[0]]:sids;
+  disp.forEach((sid,i)=>{
+    const st=stations[sid];if(!st)return;
+    if(i>0){const seg=document.createElement('div');seg.className='route-line';seg.style.background=line.bg;body.appendChild(seg);}
+    const row=document.createElement('div');row.className='route-item';row.style.cursor='pointer';
+    row.addEventListener('click',()=>map.setView(st.latlng,14));
+    const dot=document.createElement('div');dot.className='route-dot';dot.style.borderColor=line.bg;
+    const isRet=line.circular&&i===disp.length-1;
+    const isXfer=st.lineIds.length>1||Object.values(transfers).some(t=>t.a===sid||t.b===sid);
+    if(isXfer){dot.style.width='14px';dot.style.height='14px';dot.style.marginLeft='-1px';}
+    const name=document.createElement('span');name.className='route-name';
+    name.textContent=st.name+(isRet?' ↩':'')+(isXfer?' ⇄':'');
+    row.append(dot,name);body.appendChild(row);
+  });
+  if(line.circular){const n=document.createElement('div');n.style.cssText='font-size:10px;color:#b080c0;text-align:center;margin-top:4px';n.textContent='⟳ Circular';body.appendChild(n);}
 }
-function toggleCustomForm(){
-  const f=document.getElementById('custom-line-form');
-  f.style.display=f.style.display==='none'?'block':'none';
-}
+
+function toggleCustomForm(){const f=document.getElementById('custom-line-form');f.style.display=f.style.display==='none'?'block':'none';}
 function addCustomLine(){
   const name=document.getElementById('cl-name').value.trim();if(!name)return;
-  const bg=document.getElementById('cl-bg').value;
-  const fg=document.getElementById('cl-fg').value;
+  let bg=document.getElementById('cl-bg').value;
+  let fg=document.getElementById('cl-fg').value;
+  if (bg === '#888') bg = '#888888';
+  if (fg === '#fff') fg = '#ffffff';
+  
   const id='CX_'+genId();
-  lines[id]={id,label:name.substring(0,4),title:name,bg,fg,stations:[],circular:false,smooth:false,polylines:[],custom:true,trains:[]};
+  lines[id]={id,label:name.substring(0,4),title:name,bg,fg,custom:true,nodes:[],circular:false,smooth:true,polylines:[],trains:[],_stationFracs:null};
   document.getElementById('cl-name').value='';
-  if(!extraVisible)toggleExtra();
   buildLinesPanel();selectLine(id);
   document.getElementById('custom-line-form').style.display='none';
 }
 
 function clearAll(){
   stopAnimLoop();
-  Object.values(depots).forEach(dp=>{
-    dp.connLines.forEach(l=>map.removeLayer(l));
-    if(dp.marker)map.removeLayer(dp.marker);
-  });
+  Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{b.polylines.forEach(p=>map.removeLayer(p));b.waypoints.forEach(w=>{if(w.marker)map.removeLayer(w.marker);});});if(dp.marker)map.removeLayer(dp.marker);});
   depots={};
   Object.values(lines).forEach(l=>{
     l.trains.forEach(t=>{t.markers.forEach(m=>map.removeLayer(m));});
-    l.trains=[];l.polylines.forEach(p=>map.removeLayer(p));l.stations=[];l.polylines=[];
+    l.trains=[];l.polylines.forEach(p=>map.removeLayer(p));
+    l.nodes.forEach(n=>{if(n.type==='waypoint'&&n.marker)map.removeLayer(n.marker);});
+    l.nodes=[];l.polylines=[];l._stationFracs=null;
   });
+  lines={};
   Object.values(stations).forEach(st=>{if(st.marker)map.removeLayer(st.marker);});
-  stations={};activeLineId=null;
-  buildLinesPanel();updateRouteDiagram();updateStats();
+  stations={};activeLineId=null;transfers={};transferLines.forEach(l=>map.removeLayer(l));transferLines=[];
+  buildLinesPanel();updateRouteDiagram();updateTrainSection();updateStats();
 }
-function startScratch(){
-  if(!confirm('Clear everything and start from scratch?'))return;
-  clearAll();map.setView([40.728,-73.944],12);
-}
+function startScratch(){if(!confirm('Clear everything?'))return;clearAll();map.setView([20,0],2);}
 
 function saveToFile(){
   const data={
-    version:5,savedAt:new Date().toISOString(),
-    stations:Object.values(stations).map(s=>({id:s.id,latlng:s.latlng,name:s.name,borough:s.borough,ridership:s.ridership,lineIds:s.lineIds})),
-    lineStates:Object.fromEntries(Object.entries(lines).map(([k,v])=>[k,{stations:v.stations,circular:v.circular||false,smooth:v.smooth||false,trains:v.trains.map(t=>({id:t.id,model:t.model,totalCars:t.totalCars,carsPerSet:t.carsPerSet,count:t.count,running:false}))}])),
-    customLines:Object.values(lines).filter(l=>l.custom).map(l=>({id:l.id,label:l.label,title:l.title||l.label,bg:l.bg,fg:l.fg})),
-    depots:Object.values(depots).map(d=>({id:d.id,latlng:d.latlng,name:d.name,connections:d.connections})),
-    settings:{font:document.getElementById('font-select').value}
+    version:12,savedAt:new Date().toISOString(),
+    stations:Object.values(stations).map(s=>({id:s.id,latlng:s.latlng,name:s.name,lineIds:s.lineIds})),
+    lineMeta:Object.fromEntries(Object.entries(lines).map(([k,v])=>[k,{
+      id:v.id, label:v.label, title:v.title||'', bg:v.bg, fg:v.fg, custom:!!v.custom
+    }])),
+    lineStates:Object.fromEntries(Object.entries(lines).map(([k,v])=>[k,{
+      nodes:v.nodes.map(n=>n.type==='waypoint'?{type:'waypoint',latlng:n.latlng}:{type:n.type,id:n.id}),
+      circular:v.circular||false,smooth:v.smooth!==false,
+      trains:v.trains.map(t=>({id:t.id,model:t.model,totalCars:t.totalCars,carsPerSet:t.carsPerSet,count:t.count,status:t.status||'stopped',isFreight:t.isFreight||false}))
+    }])),
+    depots:Object.values(depots).map(d=>({id:d.id,latlng:d.latlng,name:d.name,branches:d.branches.map(b=>({id:b.id,lineId:b.lineId,startStationId:b.startStationId,waypoints:b.waypoints.map(w=>({id:w.id,latlng:w.latlng}))}))})),
+    transfers:Object.values(transfers),
+    settings:{font:document.getElementById('font-select').value,theme:document.documentElement.getAttribute('data-theme')||'light'}
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='subway-'+Date.now()+'.json';
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
-  showToast('✓ Saved as JSON!');
+  showToast('Saved');
 }
-
 function loadFromFile(){document.getElementById('file-input').click();}
 function handleFileLoad(evt){
   const file=evt.target.files[0];if(!file)return;
@@ -1721,36 +1571,126 @@ function handleFileLoad(evt){
     try{
       const data=JSON.parse(e.target.result);
       clearAll();
-      (data.customLines||[]).forEach(cl=>{lines[cl.id]={...cl,stations:[],circular:false,smooth:false,polylines:[],custom:true,trains:[]};});
-      Object.entries(data.lineStates||{}).forEach(([lid,ls])=>{
-        if(lines[lid]){lines[lid].circular=ls.circular||false;lines[lid].smooth=ls.smooth||false;lines[lid].trains=(ls.trains||[]).map(t=>({...t,running:false,markers:[],progress:[],directions:[]}));}
-      });
+
       (data.stations||[]).forEach(sd=>{const st={...sd,marker:null};stations[sd.id]=st;createMarker(st);});
-      Object.entries(data.lineStates||{}).forEach(([lid,ls])=>{if(lines[lid])lines[lid].stations=(ls.stations||[]).filter(sid=>stations[sid]);});
+
+      if(data.lineMeta){
+        Object.entries(data.lineMeta).forEach(([lid,meta])=>{
+          lines[lid]={
+            id:lid,label:meta.label||lid,title:meta.title||'',
+            bg:meta.bg==='#888'?'#888888':(meta.bg||'#888888'),
+            fg:meta.fg==='#fff'?'#ffffff':(meta.fg||'#ffffff'),
+            custom:!!meta.custom,
+            nodes:[],circular:false,smooth:true,
+            polylines:[],trains:[],_stationFracs:null
+          };
+        });
+      }
+      if(!data.lineMeta&&data.customLines){
+        data.customLines.forEach(cl=>{
+          lines[cl.id]={
+            id:cl.id,label:cl.label||cl.id,title:cl.title||'',
+            bg:cl.bg==='#888'?'#888888':(cl.bg||'#888888'),
+            fg:cl.fg==='#fff'?'#ffffff':(cl.fg||'#ffffff'),
+            custom:true,
+            nodes:[],circular:false,smooth:true,
+            polylines:[],trains:[],_stationFracs:null
+          };
+        });
+      }
+
+      Object.entries(data.lineStates||{}).forEach(([lid,ls])=>{
+        if(!lines[lid])return;
+        lines[lid].circular=ls.circular||false;
+        lines[lid].smooth=ls.smooth!==false;
+        lines[lid].nodes=(ls.nodes||[]).map(n=>{
+          if(n.type==='waypoint')return{type:'waypoint',id:genId(),latlng:n.latlng};
+          return{type:n.type,id:n.id};
+        });
+        lines[lid].trains=(ls.trains||[]).map(t=>{
+          const count=Math.max(1,t.count||1);
+          const progress=[],directions=[],dwellUntil=[],prevFrac=[];
+          for(let i=0;i<count;i++){
+            const p=i/count;
+            progress.push(p);
+            directions.push((ls.circular&&i>=Math.ceil(count/2))?-1:1);
+            dwellUntil.push(0);
+            prevFrac.push(p);
+          }
+          // ИСПРАВЛЕНИЕ: добавлен lineId: lid, чтобы поезд знал свою линию
+          return{...t, lineId: lid, count, progress, directions, dwellUntil, prevFrac,
+            status:t.status||'stopped',freightActive:false,markers:[]};
+        });
+        lines[lid]._stationFracs=null;
+      });
+
       (data.depots||[]).forEach(dd=>{
-        const dp={id:dd.id,latlng:dd.latlng,name:dd.name,connections:dd.connections||[],marker:null,connLines:[]};
+        const dp={id:dd.id,latlng:dd.latlng,name:dd.name,marker:null,branches:[]};
+        (dd.branches||[]).forEach(b=>{
+          dp.branches.push({
+            id:b.id||genId(),lineId:b.lineId,startStationId:b.startStationId,
+            waypoints:(b.waypoints||[]).map(w=>({id:w.id||genId(),latlng:w.latlng,marker:null})),
+            polylines:[]
+          });
+        });
         depots[dd.id]=dp;
         createDepotMarker(dp);
-        redrawDepotConnections(dp);
       });
-      Object.values(lines).forEach(l=>{if(l.stations.length>=2)redrawLine(l);});
-      if(data.settings&&data.settings.font){const fs=document.getElementById('font-select');if(fs){fs.value=data.settings.font;changeFont(data.settings.font);}}
-      buildLinesPanel();updateStats();showToast('✓ Loaded — '+Object.keys(stations).length+' stations');
-    }catch(err){alert('Load failed: '+err.message);}
+
+      (data.transfers||[]).forEach(t=>{
+        if(stations[t.a]&&stations[t.b])transfers[t.id]={id:t.id,a:t.a,b:t.b};
+      });
+      redrawTransfers();
+
+      Object.values(lines).forEach(l=>{
+        if(l.nodes.length>=2)redrawLine(l);
+        l.nodes.forEach(n=>{if(n.type==='waypoint')createWaypointMarker(l,n);});
+      });
+      Object.values(depots).forEach(dp=>{
+        dp.branches.forEach(b=>{
+          redrawBranch(dp,b);
+          b.waypoints.forEach(w=>createBranchWaypointMarker(dp,b,w));
+        });
+      });
+
+      if(data.settings){
+        if(data.settings.font){const fs=document.getElementById('font-select');if(fs){fs.value=data.settings.font;changeFont(data.settings.font);}}
+        if(data.settings.theme)setTheme(data.settings.theme);
+      }
+      
+      // Spawn markers and start animation for active trains
+      let anyActive = false;
+      Object.values(lines).forEach(l=>{
+        l.trains.forEach(t=>{
+          if(isTrainActive(t)){
+            anyActive = true;
+            if(!t.isFreight){
+              spawnTrainMarkers(t, l);
+            } else {
+              t.freightActive = false;
+            }
+          }
+        });
+      });
+      if(anyActive) startAnimLoop();
+
+      buildLinesPanel();
+      updateStats();
+      updateWaypointVisibility();
+      showToast('Loaded '+Object.keys(stations).length+' stations, '+Object.keys(lines).length+' lines');
+    }catch(err){alert('Load failed: '+err.message);console.error(err);}
   };
   r.readAsText(file);evt.target.value='';
 }
 
 function updateModeLabel(){
   const el=document.getElementById('mode-label');
-  if(depotMode){
-    el.textContent='🏭 Depot mode — click map to place a depot (click button again to cancel)';
-  } else if(activeLineId){
+  if(pendingBranchWaypoint)el.textContent='Click map to place branch waypoint';
+  else if(depotMode)el.textContent='🏭 Depot mode — click map';
+  else if(activeLineId){
     const l=lines[activeLineId];
-    el.textContent='Line '+l.label+' selected — click map to insert stations';
-  } else {
-    el.textContent='Select a line, then click the map to add stations';
-  }
+    el.textContent='Line '+l.label+' — '+(editMode==='waypoint'?'click to add waypoints':'click to add stations');
+  }else el.textContent='Select a line, then click the map';
 }
 let toastTimer=null;
 function showToast(msg){
@@ -1759,20 +1699,162 @@ function showToast(msg){
 }
 function openAbout(){document.getElementById('about-modal').classList.add('open');}
 function closeAbout(){document.getElementById('about-modal').classList.remove('open');}
+function generateScreenshot(){
+  const pts=[];
+  Object.values(stations).forEach(s=>pts.push(s.latlng));
+  Object.values(lines).forEach(l=>{l.nodes.forEach(n=>{if(n.type==='waypoint')pts.push(n.latlng);});});
+  Object.values(depots).forEach(dp=>{pts.push(dp.latlng);dp.branches.forEach(b=>{b.waypoints.forEach(w=>pts.push(w.latlng));});});
+  if(!pts.length){showToast('Nothing to screenshot');return;}
+  const bounds=L.latLngBounds(pts);bounds.pad(0.1);
+  const nw=bounds.getNorthWest(),se=bounds.getSouthEast();
+  const zoom=16;
+  const p1=map.project(nw,zoom),p2=map.project(se,zoom);
+  const padPx=120;
+  const width=Math.abs(p2.x-p1.x)+padPx*2;
+  const height=Math.abs(p2.y-p1.y)+padPx*2;
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  const ctx=canvas.getContext('2d');
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const bg=isDark?'#1a1a1a':'#fcfcfc',text=isDark?'#eee':'#000',xfer=isDark?'#fff':'#000';
+  ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);
+  const getPt=ll=>{const p=map.project(ll,zoom);return{x:p.x-p1.x+padPx,y:p.y-p1.y+padPx};};
+  
+  // Branches
+  Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{
+    const line=lines[b.lineId];const sSt=stations[b.startStationId];
+    if(!line||!sSt)return;
+    const bPts=[sSt.latlng,...b.waypoints.map(w=>w.latlng),dp.latlng];
+    let draw;
+    if(line.smooth!==false&&bPts.length>=2)draw=catmullRom(bPts,false);else draw=bPts;
+    ctx.beginPath();
+    draw.forEach((p,i)=>{const pt=getPt(p);if(i===0)ctx.moveTo(pt.x,pt.y);else ctx.lineTo(pt.x,pt.y);});
+    ctx.strokeStyle=line.bg;ctx.lineWidth=14;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
+  });});
+  
+  // Lines
+  Object.values(lines).forEach(line=>{
+    const lPts=getLinePoints(line);if(lPts.length<2)return;
+    const closed=line.circular&&lPts.length>2;
+    let drawPts=closed?[...lPts,lPts[0]]:lPts;
+    if(line.smooth!==false)drawPts=catmullRom(closed?drawPts.slice(0,-1):drawPts,closed);
+    ctx.beginPath();
+    drawPts.forEach((p,i)=>{const pt=getPt(p);if(i===0)ctx.moveTo(pt.x,pt.y);else ctx.lineTo(pt.x,pt.y);});
+    ctx.strokeStyle=line.bg;ctx.lineWidth=16;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
+    if(drawPts.length>2){
+      ctx.save();
+      ctx.font='bold 48px sans-serif'; // УВЕЛИЧЕНО
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      const midIdx=Math.floor(drawPts.length/2);
+      const pt1=getPt(drawPts[midIdx]),pt2=getPt(drawPts[midIdx+1]||drawPts[midIdx]);
+      let angle=Math.atan2(pt2.y-pt1.y,pt2.x-pt1.x);
+      if(angle>Math.PI/2||angle<-Math.PI/2)angle+=Math.PI;
+      ctx.translate(pt1.x,pt1.y);ctx.rotate(angle);
+      ctx.strokeStyle=bg;ctx.lineWidth=12;ctx.strokeText(line.label,0,-36);
+      ctx.fillStyle=line.bg;ctx.fillText(line.label,0,-36);
+      ctx.restore();
+    }
+  });
+  
+  // Transfers
+  Object.values(transfers).forEach(t=>{
+    const s1=stations[t.a],s2=stations[t.b];if(!s1||!s2)return;
+    const pt1=getPt(s1.latlng),pt2=getPt(s2.latlng);
+    ctx.beginPath();ctx.moveTo(pt1.x,pt1.y);ctx.lineTo(pt2.x,pt2.y);
+    ctx.strokeStyle=xfer;ctx.lineWidth=10;ctx.stroke();
+  });
+  
+  // Depots
+  Object.values(depots).forEach(dp=>{
+    const pt=getPt(dp.latlng);
+    ctx.beginPath();ctx.arc(pt.x,pt.y,18,0,Math.PI*2);
+    ctx.fillStyle='#fff';ctx.fill();
+    ctx.lineWidth=5;ctx.strokeStyle='#ff9800';ctx.stroke();
+    ctx.font='bold 28px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='#ff9800';ctx.fillText('🏭',pt.x,pt.y);
+  });
+  
+  // Stations
+  Object.values(stations).forEach(st=>{
+    const pt=getPt(st.latlng);
+    ctx.beginPath();ctx.arc(pt.x,pt.y,12,0,Math.PI*2);
+    ctx.fillStyle=isDark?'#222':'#fff';ctx.fill();
+    ctx.lineWidth=6;
+    const fl=lines[st.lineIds[0]];ctx.strokeStyle=fl?fl.bg:'#888';
+    const isX=st.lineIds.length>1||Object.values(transfers).some(t=>t.a===st.id||t.b===st.id);
+    if(isX){
+      ctx.lineWidth=5;ctx.strokeStyle='#fff';ctx.stroke();
+      ctx.beginPath();ctx.arc(pt.x,pt.y,16,0,Math.PI*2);
+      ctx.lineWidth=3;ctx.strokeStyle=xfer;ctx.stroke();
+    }
+    else ctx.stroke();
+    
+    ctx.font='bold 36px sans-serif'; // УВЕЛИЧЕНО
+    ctx.textAlign='center';
+    ctx.strokeStyle=bg;ctx.lineWidth=10;ctx.strokeText(st.name,pt.x,pt.y+45);
+    ctx.fillStyle=text;ctx.fillText(st.name,pt.x,pt.y+45);
+  });
+  
+  const dataUrl=canvas.toDataURL('image/png');
+  lastSnapshotDataUrl=dataUrl;
+  document.getElementById('snapshot-img').src=dataUrl;
+  document.getElementById('screenshot-modal').classList.add('open');
+}
+function closeScreenshot(){document.getElementById('screenshot-modal').classList.remove('open');}
+function downloadSnapshot(){if(!lastSnapshotDataUrl)return;const a=document.createElement('a');a.href=lastSnapshotDataUrl;a.download='subway-map-'+Date.now()+'.png';document.body.appendChild(a);a.click();document.body.removeChild(a);}
+async function copySnapshot(){
+  if(!lastSnapshotDataUrl)return;
+  try{const res=await fetch(lastSnapshotDataUrl);const blob=await res.blob();await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);showToast('Copied!');}
+  catch(err){showToast('Failed');}
+}
 
 document.getElementById('about-modal').addEventListener('click',e=>{if(e.target===document.getElementById('about-modal'))closeAbout();});
 document.getElementById('edit-line-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-line-modal'))closeEditLine();});
+document.getElementById('screenshot-modal').addEventListener('click',e=>{if(e.target===document.getElementById('screenshot-modal'))closeScreenshot();});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     clearInsertPreview();
     if(depotMode)toggleDepotMode(false);
-    deselectLine();
-    map.closePopup();
+    pendingBranchWaypoint=null;
+    deselectLine();map.closePopup();connectingSource=null;
   }
 });
 
+window.triggerDelay = function(lineLabel) {
+  const candidates = [];
+  Object.values(lines).forEach(l => {
+    if (lineLabel && l.label !== lineLabel && l.title !== lineLabel) return;
+    l.trains.forEach(t => {
+      if (isTrainActive(t) && !t.isFreight) candidates.push({train: t, line: l});
+    });
+  });
+  if (!candidates.length) {
+    console.log('[triggerDelay] No active trains found' + (lineLabel ? ' on line '+lineLabel : ''));
+    showToast('No active trains to delay');
+    return;
+  }
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  const delayTypes = [
+    {name: 'Технические работы', min: 3000, max: 7000},
+    {name: 'Проблемы с поездом', min: 2000, max: 5000},
+    {name: 'Задымление', min: 5000, max: 10000},
+    {name: 'Прочие задержки', min: 1000, max: 4000}
+  ];
+  const d = delayTypes[Math.floor(Math.random() * delayTypes.length)];
+  const ms = d.min + Math.random() * (d.max - d.min);
+  const now = performance.now();
+  for (let i = 0; i < pick.train.count; i++) {
+    if (!pick.train.dwellUntil[i]) pick.train.dwellUntil[i] = 0;
+    pick.train.dwellUntil[i] = Math.max(pick.train.dwellUntil[i], now + ms);
+  }
+  const msg = `[${pick.line.label}] ${pick.train.model}: ${d.name} (${Math.round(ms/1000)}s)`;
+  console.log('%c[DELAY] ' + msg, 'color:#e65100;font-weight:bold');
+  showToast(msg);
+};
+console.log('%c🚇 Console commands ready:', 'color:#0066cc;font-weight:bold');
+console.log('%ctriggerDelay()              — random delay on random active train', 'color:#666');
+console.log('%ctriggerDelay("A")           — random delay on line A', 'color:#666');
+
 initMap();
-[...NYC_LINES,...EXTRA_LINES].forEach(ensureLine);
 buildLinesPanel();updateStats();updateModeLabel();
 </script>
 </body>
