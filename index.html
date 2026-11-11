@@ -5,13 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <title>Simple Subway Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Nunito:wght@400;600;700&family=Oswald:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;--panel-w:320px;--bg-main:#e8e8e8;--panel-bg:#ffffff;--panel-bg-alt:#f7f7f7;--panel-header-bg:#fafafa;--border:#e0e0e0;--border-soft:#eee;--text:#1a1a1a;--text-secondary:#666;--text-tertiary:#999;--accent:#0066cc;--accent-hover:#0052a3;--accent-soft:#e3f2fd;--danger:#cc0000;--danger-soft:#ffebee;--success:#2e7d32;--success-soft:#e8f5e9;--warning:#e65100;--warning-soft:#fff3e0;--shadow:0 1px 3px rgba(0,0,0,.08);--popup-bg:#fff;--input-bg:#fff;--switch-off:#ccc;--switch-knob:#fff;--map-bg:#e8e8e8}
 [data-theme="dark"]{--bg-main:#1a1a1a;--panel-bg:#222;--panel-bg-alt:#2a2a2a;--panel-header-bg:#1e1e1e;--border:#3a3a3a;--border-soft:#2e2e2e;--text:#eee;--text-secondary:#999;--text-tertiary:#666;--accent:#4a9eff;--accent-hover:#3a8eef;--accent-soft:#1a3a5a;--danger:#f66;--danger-soft:#5a2020;--success:#6d6;--success-soft:#1e3a1e;--warning:#fa4;--warning-soft:#5a3a1a;--shadow:0 1px 3px rgba(0,0,0,.4);--popup-bg:#2a2a2a;--input-bg:#1a1a1a;--switch-off:#444;--switch-knob:#ccc;--map-bg:#1a1a1a}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg-main);color:var(--text)}
-#app{display:flex;height:100vh;width:100vw;position:relative}
+#app{display:flex;height:100vh;height:100dvh;width:100vw;position:relative}
 #map-wrap{flex:1;position:relative;overflow:hidden;min-width:0}
 #map{width:100%;height:100%}
 #panel{width:var(--panel-w);flex-shrink:0;background:var(--panel-bg);display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--border);z-index:400;box-shadow:var(--shadow)}
@@ -28,8 +30,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .line-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;cursor:pointer;border:2px solid transparent;transition:transform .15s,box-shadow .15s;user-select:none;flex-shrink:0;position:relative;box-shadow:var(--shadow)}
 .line-btn:hover{transform:scale(1.08)}
 .line-btn.active{border-color:var(--text)!important;transform:scale(1.12);box-shadow:0 0 0 3px var(--accent-soft)}
-.line-btn .train-dot{position:absolute;bottom:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:#34c759;border:1px solid #fff;display:none}
-.line-btn.has-trains .train-dot{display:block}
 .expand-btn{width:100%;background:var(--panel-bg);border:1px solid var(--border);color:var(--text-secondary);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;text-align:left;margin-bottom:4px;transition:background .15s;font-family:var(--font);box-shadow:var(--shadow)}
 .expand-btn:hover{background:var(--panel-bg-alt)}
 .expand-btn.depot-active{background:var(--warning-soft);border-color:var(--warning);color:var(--warning)}
@@ -77,32 +77,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .route-dot{width:12px;height:12px;border-radius:50%;background:var(--panel-bg);border:2.5px solid #888;flex-shrink:0;box-sizing:border-box}
 .route-line{width:3px;height:14px;border-radius:2px;opacity:.85;margin-left:4px;flex-shrink:0}
 .route-name{font-size:12px;margin-left:8px}
-#train-section{display:none;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--panel-bg)}
-#train-section.visible{display:block}
-.train-section-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-secondary);margin-bottom:6px}
-.train-form{background:var(--panel-bg-alt);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px}
-#train-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
-.train-item{display:flex;align-items:center;gap:8px;background:var(--panel-bg-alt);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px}
-.train-item-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.train-item-info{flex:1;overflow:hidden}
-.train-item-name{font-weight:600;font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
-.train-item-sub{font-size:10px;color:var(--text-secondary)}
-.train-item-btns{display:flex;gap:4px}
-.ti-btn{padding:3px 8px;background:var(--panel-bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:11px;color:var(--text);font-family:var(--font)}
-.ti-btn.stop{border-color:var(--warning);color:var(--warning)}
-.ti-btn.del{border-color:var(--danger);color:var(--danger)}
-.ti-btn.run{border-color:var(--success);color:var(--success)}
-.ti-btn.edit{border-color:var(--accent);color:var(--accent)}
-.ti-btn.move{border-color:#ce93d8;color:#8e24aa}
-[data-theme="dark"] .ti-btn.move{border-color:#6a2a8a;color:#d4a0e8}
-#new-train-btn,#new-freight-btn{flex:1;padding:6px;background:var(--success-soft);border:1px solid var(--success);color:var(--success);border-radius:4px;cursor:pointer;font-size:12px;font-family:var(--font)}
-#new-freight-btn{background:#f3e5f5;border-color:#9b59b6;color:#9b59b6}
-#new-train-form{display:none}
-.train-table-wrap{margin-bottom:10px;overflow-x:auto;border:1px solid var(--border);border-radius:6px}
-.train-table{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--font)}
-.train-table th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-secondary);font-weight:600;background:var(--panel-bg-alt)}
-.train-table td{padding:5px 8px;border-bottom:1px solid var(--border-soft)}
-.train-table tr:last-child td{border-bottom:none}
 #settings-section{padding:10px 14px;border-bottom:1px solid var(--border)}
 .stitle{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-secondary);margin-bottom:6px}
 .srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
@@ -161,10 +135,9 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .modal-box p{font-size:12px;line-height:1.6;margin-bottom:8px;color:var(--text-secondary)}
 .mbtn{background:var(--panel-bg-alt);border:none;color:var(--text);padding:8px 18px;border-radius:6px;cursor:pointer;font-size:12px;font-family:var(--font);font-weight:600}
 #screenshot-modal .modal-box{max-width:900px}
-#screenshot-modal .img-wrap{background:var(--bg-main);padding:10px;border-radius:6px;margin-bottom:16px;overflow:auto;max-height:60vh;text-align:center;border:1px solid var(--border); position:relative; min-height:200px; display:flex; align-items:center; justify-content:center;}
-#screenshot-modal img{max-width:100%;height:auto;border-radius:4px; display:none;}
+#screenshot-modal .img-wrap{background:var(--bg-main);padding:10px;border-radius:6px;margin-bottom:16px;overflow:auto;max-height:60vh;text-align:center;border:1px solid var(--border);position:relative;min-height:200px;display:flex;align-items:center;justify-content:center}
+#screenshot-modal img{max-width:100%;height:auto;border-radius:4px;display:none}
 #insert-hint{position:absolute;background:var(--popup-bg);color:var(--text);border:1px solid var(--border);padding:4px 12px;border-radius:12px;font-size:11px;z-index:750;pointer-events:none;display:none;white-space:nowrap;transform:translate(14px,-50%);box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.train-marker{border-radius:50%;cursor:default;box-shadow:0 0 6px rgba(0,0,0,.4),0 0 10px currentColor;transition:none;will-change:transform}
 @media (max-width:640px){
   :root{--panel-w:100vw}
   #panel{position:absolute;top:0;bottom:0;right:0;transform:translateX(100%);z-index:800;border-left:none}
@@ -189,7 +162,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
       <div class="p-section">
         <div class="p-title">Search Location</div>
         <div style="display:flex;gap:6px">
-          <input type="text" id="city-input" placeholder="e.g. London" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:4px;background:var(--input-bg);color:var(--text);font-family:var(--font);font-size:12px">
+          <input type="text" id="city-input" placeholder="e.g. London" onkeydown="if(event.key==='Enter')searchCity()" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:4px;background:var(--input-bg);color:var(--text);font-family:var(--font);font-size:12px">
           <button class="fb fb-ok" onclick="searchCity()" style="flex:0 0 auto;padding:6px 12px">Find</button>
         </div>
       </div>
@@ -216,22 +189,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
         <div id="route-header" onclick="toggleRouteDiagram()"><span id="rti">▶</span>&nbsp; Route Diagram</div>
         <div id="route-body"><div id="route-content"><div class="no-msg">Select a line.</div></div></div>
       </div>
-      <div id="train-section">
-        <div class="train-section-title">🚇 Trains on this line</div>
-        <div class="train-table-wrap"><table class="train-table"><thead><tr><th>Статус</th><th>Имя поездов</th><th>Кол-во</th></tr></thead><tbody id="train-status-tbody"></tbody></table></div>
-        <div id="train-list"></div>
-        <div style="display:flex;gap:6px">
-          <button id="new-train-btn" onclick="toggleNewTrainForm()">+ New Train</button>
-          <button id="new-freight-btn" onclick="addFreightTrain()" style="display:none">🚚 Freight</button>
-        </div>
-        <div id="new-train-form" class="train-form" style="margin-top:6px">
-          <div class="ff"><label>Model name</label><input type="text" id="nt-model" list="nt-model-list" placeholder="e.g. R160A"/><datalist id="nt-model-list"></datalist></div>
-          <div class="ff"><label>Total cars</label><input type="number" id="nt-total" min="1" max="9999" value="60"/></div>
-          <div class="ff"><label>Cars per set</label><input type="number" id="nt-per" min="1" max="20" value="10"/></div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:6px" id="nt-count-preview">→ 6 sets</div>
-          <div class="fa-row"><button class="fb fb-ok" onclick="addTrain()">Add</button><button class="fb fb-cancel" onclick="toggleNewTrainForm()">Cancel</button></div>
-        </div>
-      </div>
       <div id="settings-section">
         <div class="stitle">Appearance</div>
         <div class="srow"><span class="slabel">Theme</span><select class="sselect" id="theme-select" onchange="setTheme(this.value)"><option value="light">Light</option><option value="dark">Dark</option></select></div>
@@ -240,13 +197,11 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
           <option value="osm">OSM</option>
           <option value="carto-dark">Carto Dark</option>
           <option value="esri">Esri</option>
-          <option value="yandex-map">Яндекс</option>
         </select></div>
       </div>
       <div id="stats-section">
         <div class="stat-row"><div class="stat-icon">💳</div><div><div class="stat-value">$2.90</div><div class="stat-label">Fare</div></div></div>
         <div class="stat-row"><div class="stat-icon">🧍</div><div><div class="stat-value" id="stat-riders">—</div><div class="stat-label">Ridership</div></div></div>
-        <div class="stat-row"><div class="stat-icon">🚇</div><div><div class="stat-value" id="stat-trains">0</div><div class="stat-label">Active trains</div></div></div>
       </div>
     </div>
     <div id="bottom-btns">
@@ -259,7 +214,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
   </div>
 </div>
 
-<div id="about-modal" class="modal-ov"><div class="modal-box"><h2>Simple Subway Map</h2><p>Console command: <code>triggerDelay()</code> or <code>triggerDelay('LineLabel')</code></p><p>Freight: max 2 per line. Goes depot→depot, disappears, 5% chance/sec to respawn.</p><button class="mbtn" onclick="closeAbout()">Close</button></div></div>
+<div id="about-modal" class="modal-ov"><div class="modal-box"><h2>Simple Subway Map</h2><p>Select a line, then click the map to add stations or waypoints. Drag to move, click a station for options.</p><button class="mbtn" onclick="closeAbout()">Close</button></div></div>
 
 <div id="edit-line-modal" class="modal-ov"><div class="modal-box"><h2>Edit Line</h2>
   <div class="ff"><label>Label</label><input type="text" id="el-label" maxlength="4"/></div>
@@ -271,51 +226,27 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
   <div class="fa-row"><button class="fb fb-ok" onclick="saveEditLine()">Save</button><button class="fb fb-cancel" onclick="closeEditLine()">Cancel</button></div>
 </div></div>
 
-<div id="edit-train-modal" class="modal-ov"><div class="modal-box"><h2>Edit Train</h2>
-  <div class="ff"><label>Model</label><input type="text" id="et-model" list="nt-model-list"/></div>
-  <div class="ff"><label>Total cars</label><input type="number" id="et-total" min="1" max="9999"/></div>
-  <div class="ff"><label>Cars per set</label><input type="number" id="et-per" min="1" max="20"/></div>
-  <div class="ff"><label>Status</label><select id="et-status" class="sselect" style="width:100%;max-width:none">
-    <option value="running">На маршруте</option><option value="testing">Испытания</option><option value="stopped">Не на маршруте</option><option value="decommissioned">Списаны</option><option value="other">Прочее</option>
-  </select></div>
-  <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px" id="et-count-preview">→ 6 sets</div>
-  <div class="fa-row"><button class="fb fb-ok" onclick="saveEditTrain()">Save</button><button class="fb fb-cancel" onclick="closeEditTrain()">Cancel</button></div>
-</div></div>
-
-<div id="transfer-train-modal" class="modal-ov"><div class="modal-box"><h2>Transfer Train</h2>
-  <div class="ff"><label>Target line</label><select id="tt-line" class="sselect" style="width:100%;max-width:none"></select></div>
-  <div class="fa-row"><button class="fb fb-ok" onclick="confirmTransferTrain()">Transfer</button><button class="fb fb-cancel" onclick="closeTransferTrain()">Cancel</button></div>
-</div></div>
-
 <div id="screenshot-modal" class="modal-ov">
   <div class="modal-box">
     <h2>Map Snapshot</h2>
-    
-    <!-- Настройки снапшота -->
     <div style="background:var(--panel-bg-alt);padding:10px 14px;border-radius:6px;border:1px solid var(--border);margin-bottom:14px;display:flex;flex-direction:column;gap:12px;">
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);cursor:pointer;">
         <input type="checkbox" id="snap-map-bg" checked onchange="renderScreenshot()" style="width:16px;height:16px;">
         Show map background
       </label>
-      
-      <!-- Размер элементов -->
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-size:12px;color:var(--text);white-space:nowrap;width:70px;">Scale: <span id="snap-scale-val">1.0x</span></span>
         <input type="range" id="snap-scale" min="0.1" max="3.0" step="0.1" value="1.0" oninput="document.getElementById('snap-scale-val').textContent=this.value+'x';renderScreenshot();" style="flex:1;">
       </div>
-
-      <!-- Разрешение картинки -->
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-size:12px;color:var(--text);white-space:nowrap;width:70px;">Quality: <span id="snap-res-val">2x</span></span>
         <input type="range" id="snap-res" min="1" max="4" step="0.5" value="2" oninput="document.getElementById('snap-res-val').textContent=this.value+'x';renderScreenshot();" style="flex:1;">
       </div>
     </div>
-
     <div class="img-wrap" id="snapshot-wrapper">
       <div id="snapshot-loading" style="position:absolute;display:none;color:var(--text-secondary);font-size:14px;">Rendering map...</div>
       <img id="snapshot-img" src="" alt="Snapshot"/>
     </div>
-    
     <div class="fa-row">
       <button class="fb fb-ok" onclick="downloadSnapshot()">Download PNG</button>
       <button class="fb fb-cancel" onclick="copySnapshot()">Copy to Clipboard</button>
@@ -328,25 +259,33 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 const MAP_PROVIDERS={
   'osm':{url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',opts:{attribution:'© OSM',maxZoom:19}},
   'esri':{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',opts:{attribution:'© Esri',maxZoom:18}},
-  'yandex-map':{url:'https://core-renderer-tiles.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&scale=1&lang=ru_RU',opts:{attribution:'© Яндекс',maxZoom:19}},
-  'carto-dark': {url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',opts:{attribution:'© OSM © CARTO',subdomains:'abcd',maxZoom:19}}
+  'carto-dark':{url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',opts:{attribution:'© OSM © CARTO',subdomains:'abcd',maxZoom:19}}
 };
 
-let map,currentTile=null,hybridLayers=[];
+let map,currentTile=null;
 let activeLineId=null,lines={},stations={},depots={},transfers={},transferLines=[];
 let connectingSource=null,pendingBranchWaypoint=null,depotMode=false,routeOpen=false;
-let dragState=null,insertPreviewLine=null,hoverInsertInfo=null,trainAnimFrame=null,lastAnimTime=null;
-let editingTrain=null,transferringTrain=null,editMode='station',lastSnapshotDataUrl=null;
+let dragState=null,insertPreviewLine=null,hoverInsertInfo=null;
+let editMode='station',lastSnapshotDataUrl=null;
 
-const genId=()=>'_'+Math.random().toString(36).substr(2,9);
-const TRAIN_SPEED=0.00001;
-const FREIGHT_SPEED=0.00002;
-const DWELL_BASE_MS=2500;
-const DELAY_CHANCE=0.20;
-const MIN_GAP=0.02;
+const genId=()=>'_'+Math.random().toString(36).slice(2,11);
 
-function initMap(){map=L.map('map',{center:[20,0],zoom:2,zoomControl:true});switchTiles('osm');map.on('click',onMapClick);map.on('mousemove',onMouseMove);map.on('mouseup',onMouseUp);map.on('mouseout',onMapMouseOut);}
-function switchTiles(key){if(currentTile){map.removeLayer(currentTile);currentTile=null;}hybridLayers.forEach(l=>map.removeLayer(l));hybridLayers=[];const p=MAP_PROVIDERS[key];if(!p)return;currentTile=L.tileLayer(p.url,p.opts);currentTile.addTo(map);}
+function initMap(){
+  map=L.map('map',{center:[20,0],zoom:2,zoomControl:true});
+  switchTiles('osm');
+  map.on('click',onMapClick);
+  map.on('mousemove',onMouseMove);
+  map.on('mouseup',onMouseUp);
+  map.on('mouseout',onMapMouseOut);
+}
+function switchTiles(key){
+  const p=MAP_PROVIDERS[key];if(!p||!map)return;
+  if(currentTile){map.removeLayer(currentTile);currentTile=null;}
+  currentTile=L.tileLayer(p.url,p.opts);
+  currentTile.addTo(map);
+  const sel=document.getElementById('map-prov-sel2');
+  if(sel&&sel.value!==key)sel.value=key;
+}
 function changeFont(v){document.documentElement.style.setProperty('--font',v);}
 
 function setTheme(v){
@@ -354,16 +293,11 @@ function setTheme(v){
   const sel=document.getElementById('theme-select');
   if(sel&&sel.value!==v)sel.value=v;
   redrawTransfers();
-  
-  if (v === 'dark') {
-    switchTiles('carto-dark');
-    const mapSel = document.getElementById('map-prov-sel2');
-    if(mapSel) mapSel.value = 'carto-dark';
-  } else {
-    switchTiles('osm');
-    const mapSel = document.getElementById('map-prov-sel2');
-    if(mapSel) mapSel.value = 'osm';
-  }
+  if(!map)return;
+  // меняем подложку только если пользователь не выбрал спутник (Esri)
+  const cur=document.getElementById('map-prov-sel2').value;
+  if(v==='dark'&&cur==='osm')switchTiles('carto-dark');
+  else if(v==='light'&&cur==='carto-dark')switchTiles('osm');
 }
 
 function toggleMobilePanel(){document.getElementById('panel').classList.toggle('mobile-open');}
@@ -372,38 +306,36 @@ async function searchCity(){
   const q=document.getElementById('city-input').value.trim();if(!q)return;
   try{
     const r=await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=1`);
+    if(!r.ok)throw new Error('HTTP '+r.status);
     const data=await r.json();
     if(data.features&&data.features.length>0){
       const f=data.features[0];
-      if (f && f.geometry && f.geometry.coordinates && f.geometry.coordinates.length >= 2) {
+      if(f&&f.geometry&&f.geometry.coordinates&&f.geometry.coordinates.length>=2){
         const[lng,lat]=f.geometry.coordinates;
         map.setView([lat,lng],12);
-        showToast('Moved to '+(f.properties.name||q));
-      } else {
-        showToast('Location has no coordinates');
-      }
+        showToast('Moved to '+((f.properties&&f.properties.name)||q));
+      }else showToast('Location has no coordinates');
     }else showToast('Not found');
   }catch(e){
-    console.error("Search error:", e);
+    console.error('Search error:',e);
     showToast('Search failed');
   }
 }
 
-function ensureLine(def){if(!lines[def.id])lines[def.id]={...def,nodes:[],circular:false,smooth:true,polylines:[],trains:[],_stationFracs:null};}
-
+function ensureLine(def){
+  if(!lines[def.id])lines[def.id]={...def,nodes:[],circular:false,smooth:true,polylines:[]};
+}
 function buildLinesPanel(){
   const c=document.getElementById('lines-list');c.innerHTML='';
   const row=document.createElement('div');row.className='lines-row';
   Object.values(lines).forEach(l=>row.appendChild(makeBtn(l)));
-  c.appendChild(row);updateControlsBar();updateStatTrains();
+  c.appendChild(row);updateControlsBar();
 }
 function makeBtn(def){
   const line=lines[def.id]||def;
-  const hasTrains=line.trains&&line.trains.some(t=>isTrainActive(t));
   const btn=document.createElement('div');
-  btn.className='line-btn'+(activeLineId===def.id?' active':'')+(hasTrains?' has-trains':'');
+  btn.className='line-btn'+(activeLineId===def.id?' active':'');
   btn.style.background=line.bg;btn.style.color=line.fg;btn.textContent=line.label;btn.title=line.title||line.label;
-  const dot=document.createElement('div');dot.className='train-dot';btn.appendChild(dot);
   btn.addEventListener('click',()=>selectLine(def.id));
   return btn;
 }
@@ -411,15 +343,15 @@ function selectLine(id){
   if(activeLineId===id){deselectLine();return;}
   clearInsertPreview();if(depotMode)toggleDepotMode(false);
   pendingBranchWaypoint=null;activeLineId=id;
-  buildLinesPanel();updateControlsBar();updateRouteDiagram();updateTrainSection();updateWaypointVisibility();updateModeLabel();
+  buildLinesPanel();updateRouteDiagram();updateWaypointVisibility();updateModeLabel();
 }
 function deselectLine(){
   clearInsertPreview();activeLineId=null;
-  buildLinesPanel();updateControlsBar();updateRouteDiagram();updateTrainSection();updateWaypointVisibility();updateModeLabel();
+  buildLinesPanel();updateRouteDiagram();updateWaypointVisibility();updateModeLabel();
 }
 function updateControlsBar(){
   const bar=document.getElementById('controls-bar');
-  if(!activeLineId){bar.classList.remove('visible');return;}
+  if(!activeLineId||!lines[activeLineId]){bar.classList.remove('visible');return;}
   bar.classList.add('visible');
   const l=lines[activeLineId];
   document.getElementById('ali-dot').style.background=l.bg;
@@ -431,11 +363,17 @@ function setEditMode(m){editMode=m;document.getElementById('emode-station').clas
 function updateWaypointVisibility(){
   Object.values(lines).forEach(l=>{l.nodes.forEach(n=>{if(n.type==='waypoint'&&n.marker){if(activeLineId===l.id){if(!map.hasLayer(n.marker))n.marker.addTo(map);}else{if(map.hasLayer(n.marker))map.removeLayer(n.marker);}}});});
 }
-function toggleCircular(v){if(!activeLineId)return;lines[activeLineId].circular=v;lines[activeLineId]._stationFracs=null;redrawLine(lines[activeLineId]);updateRouteDiagram();}
+function toggleCircular(v){
+  if(!activeLineId)return;
+  clearInsertPreview();
+  lines[activeLineId].circular=v;
+  redrawLine(lines[activeLineId]);
+  Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{if(b.lineId===activeLineId)redrawBranch(dp,b);});});
+  updateRouteDiagram();
+}
 function toggleSmooth(v){
   if(!activeLineId)return;
   lines[activeLineId].smooth=v;
-  lines[activeLineId]._stationFracs=null;
   redrawLine(lines[activeLineId]);
   Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{if(b.lineId===activeLineId)redrawBranch(dp,b);});});
 }
@@ -457,22 +395,23 @@ function saveEditLine(){
   l.bg=document.getElementById('el-bg').value;l.fg=document.getElementById('el-fg').value;
   l.nodes.forEach(n=>{if(n.type==='station'){const st=stations[n.id];if(st)refreshMarker(st);}});
   redrawLine(l);
-  l.trains.forEach(t=>{if(isTrainActive(t)&&!t.isFreight)spawnTrainMarkers(t,l);});
   Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{if(b.lineId===l.id)redrawBranch(dp,b);});});
-  buildLinesPanel();updateControlsBar();closeEditLine();showToast('Line updated!');
+  buildLinesPanel();updateRouteDiagram();closeEditLine();showToast('Line updated!');
 }
 function deleteActiveLine(){
   if(!activeLineId)return;
   const l=lines[activeLineId];
   if(!confirm('Delete line?'))return;
-  stopAllTrainsOnLine(activeLineId);
   l.nodes.forEach(n=>{
     if(n.type==='station'){
       const st=stations[n.id];
       if(st){
         st.lineIds=st.lineIds.filter(lid=>lid!==activeLineId);
-        if(st.lineIds.length===0&&!Object.values(transfers).some(t=>t.a===n.id||t.b===n.id)){
-          if(st.marker)map.removeLayer(st.marker);delete stations[n.id];
+        if(st.lineIds.length===0){
+          // станция больше не принадлежит ни одной линии — удаляем её и её трансферы
+          Object.keys(transfers).forEach(k=>{const t=transfers[k];if(t.a===n.id||t.b===n.id)delete transfers[k];});
+          if(st.marker)map.removeLayer(st.marker);
+          delete stations[n.id];
         }else refreshMarker(st);
       }
     }else if(n.type==='waypoint'&&n.marker)map.removeLayer(n.marker);
@@ -484,7 +423,8 @@ function deleteActiveLine(){
   });
   l.polylines.forEach(p=>map.removeLayer(p));
   delete lines[activeLineId];activeLineId=null;
-  buildLinesPanel();updateRouteDiagram();updateTrainSection();updateModeLabel();updateStats();showToast('Line deleted');
+  redrawTransfers();
+  buildLinesPanel();updateRouteDiagram();updateModeLabel();updateStats();showToast('Line deleted');
 }
 
 function mDist(a,b){return L.latLng(a).distanceTo(L.latLng(b));}
@@ -528,17 +468,43 @@ function findClosestSegment(line,latlng){
   return{insertAfterIndex:A.idx};
 }
 function clearInsertPreview(){if(insertPreviewLine){map.removeLayer(insertPreviewLine);insertPreviewLine=null;}hoverInsertInfo=null;const hint=document.getElementById('insert-hint');if(hint)hint.style.display='none';}
+let waypointDragging=false;
+
+function nextName(prefix,obj){
+  const used=new Set(Object.values(obj).map(o=>o.name));
+  let i=Object.keys(obj).length+1;
+  while(used.has(prefix+' '+i))i++;
+  return prefix+' '+i;
+}
+
+function branchInsertIndex(dp,branch,latlng){
+  const startSt=stations[branch.startStationId];
+  const pts=[startSt?startSt.latlng:dp.latlng,...branch.waypoints.map(w=>w.latlng),dp.latlng];
+  let best=Infinity,idx=branch.waypoints.length;
+  for(let i=0;i<pts.length-1;i++){
+    const r=projectOnSegmentM(pts[i],pts[i+1],latlng);
+    if(r.dist_m<best){best=r.dist_m;idx=i;}
+  }
+  return idx;
+}
+function removeBranch(dp,b){
+  b.polylines.forEach(p=>map.removeLayer(p));b.polylines=[];
+  b.waypoints.forEach(w=>{if(w.marker){map.removeLayer(w.marker);w.marker=null;}});
+  dp.branches=dp.branches.filter(x=>x!==b);
+}
 
 function onMapClick(e){
   if(dragState&&dragState.moved){dragState=null;return;}
+  if(connectingSource){connectingSource=null;showToast('Connection cancelled');return;}
   if(pendingBranchWaypoint){
     const{depotId,branchId}=pendingBranchWaypoint;
     const dp=depots[depotId];
     if(dp){
       const branch=dp.branches.find(b=>b.id===branchId);
       if(branch){
-        const wp={id:genId(),latlng:[e.latlng.lat,e.latlng.lng],marker:null};
-        branch.waypoints.push(wp);
+        const ll=[e.latlng.lat,e.latlng.lng];
+        const wp={id:genId(),latlng:ll,marker:null};
+        branch.waypoints.splice(branchInsertIndex(dp,branch,ll),0,wp);
         createBranchWaypointMarker(dp,branch,wp);
         redrawBranch(dp,branch);
         showToast('Waypoint added');
@@ -552,7 +518,7 @@ function onMapClick(e){
   const{insertAfterIndex}=findClosestSegment(line,e.latlng);
   if(editMode==='station'){
     const sid=genId();
-    const st={id:sid,latlng:[e.latlng.lat,e.latlng.lng],name:'Station '+(Object.keys(stations).length+1),lineIds:[activeLineId],marker:null};
+    const st={id:sid,latlng:[e.latlng.lat,e.latlng.lng],name:nextName('Station',stations),lineIds:[activeLineId],marker:null};
     stations[sid]=st;
     const node={type:'station',id:sid};
     if(insertAfterIndex===-1)line.nodes.unshift(node);
@@ -566,7 +532,6 @@ function onMapClick(e){
     else line.nodes.splice(insertAfterIndex+1,0,node);
     createWaypointMarker(line,node);updateRouteDiagram();
   }
-  line._stationFracs=null;
   redrawLine(line);
   Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{if(b.lineId===line.id)redrawBranch(dp,b);});});
   clearInsertPreview();
@@ -576,12 +541,14 @@ function createWaypointMarker(line,node){
   const el=document.createElement('div');el.className='waypoint-marker';
   const icon=L.divIcon({html:el,className:'',iconSize:[12,12],iconAnchor:[6,6]});
   const m=L.marker(node.latlng,{icon,draggable:true,zIndexOffset:250});
+  m.on('dragstart',()=>{waypointDragging=true;clearInsertPreview();});
   m.on('drag',ev=>{node.latlng=[ev.target.getLatLng().lat,ev.target.getLatLng().lng];redrawLine(line);});
+  m.on('dragend',()=>{waypointDragging=false;});
   m.on('click',ev=>{
     L.DomEvent.stopPropagation(ev);
     if(confirm('Delete waypoint?')){
       line.nodes=line.nodes.filter(n=>n!==node);map.removeLayer(m);node.marker=null;
-      line._stationFracs=null;redrawLine(line);updateRouteDiagram();
+      redrawLine(line);updateRouteDiagram();
     }
   });
   m.addTo(map);node.marker=m;
@@ -590,7 +557,9 @@ function createBranchWaypointMarker(dp,branch,wp){
   const el=document.createElement('div');el.className='waypoint-marker';
   const icon=L.divIcon({html:el,className:'',iconSize:[12,12],iconAnchor:[6,6]});
   const m=L.marker(wp.latlng,{icon,draggable:true,zIndexOffset:300});
+  m.on('dragstart',()=>{waypointDragging=true;clearInsertPreview();});
   m.on('drag',ev=>{wp.latlng=[ev.target.getLatLng().lat,ev.target.getLatLng().lng];redrawBranch(dp,branch);});
+  m.on('dragend',()=>{waypointDragging=false;});
   m.on('click',ev=>{
     L.DomEvent.stopPropagation(ev);
     if(confirm('Delete waypoint?')){
@@ -612,7 +581,12 @@ function createMarker(st){
       connectingSource=null;map.closePopup();showToast('Connection created');
     }else openPopup(st.id);
   });
-  m.on('mousedown',ev=>{L.DomEvent.stopPropagation(ev);dragState={sid:st.id,moved:false};map.dragging.disable();});
+  m.on('mousedown',ev=>{
+    if(ev.originalEvent&&ev.originalEvent.button!==0)return;
+    L.DomEvent.stopPropagation(ev);
+    dragState={sid:st.id,moved:false,start:ev.containerPoint};
+    map.dragging.disable();
+  });
   m.addTo(map);st.marker=m;
 }
 function styleMarkerEl(el,st){
@@ -621,11 +595,19 @@ function styleMarkerEl(el,st){
   if(isXfer){el.classList.add('xfer');el.style.borderColor='#fff';}
   else{el.classList.remove('xfer');const fl=lines[st.lineIds[0]];el.style.borderColor=fl?fl.bg:'#888';}
 }
-function refreshMarker(st){if(!st.marker)return;const el=st.marker.getElement();if(!el)return;const d=el.querySelector('.sdot');if(d)styleMarkerEl(d,st);}
+function refreshMarker(st){
+  if(!st||!st.marker)return;
+  const el=st.marker.getElement();if(!el)return;
+  const d=el.querySelector('.sdot');if(d)styleMarkerEl(d,st);
+}
 
 function onMouseMove(e){
   if(dragState){
-    dragState.moved=true;
+    if(!dragState.moved){
+      const s=dragState.start;
+      if(s&&e.containerPoint&&e.containerPoint.distanceTo(s)<4)return;
+      dragState.moved=true;
+    }
     if(dragState.depotId){
       const dp=depots[dragState.depotId];if(!dp)return;
       dp.latlng=[e.latlng.lat,e.latlng.lng];dp.marker.setLatLng(e.latlng);
@@ -633,12 +615,12 @@ function onMouseMove(e){
     }
     const st=stations[dragState.sid];if(!st)return;
     st.latlng=[e.latlng.lat,e.latlng.lng];st.marker.setLatLng(e.latlng);
-    st.lineIds.forEach(lid=>{if(lines[lid]){lines[lid]._stationFracs=null;redrawLine(lines[lid]);}});
+    st.lineIds.forEach(lid=>{if(lines[lid])redrawLine(lines[lid]);});
     redrawTransfers();
     Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{if(b.startStationId===dragState.sid)redrawBranch(dp,b);});});
     return;
   }
-  if(!activeLineId||depotMode||pendingBranchWaypoint)return;
+  if(!activeLineId||depotMode||pendingBranchWaypoint||connectingSource||waypointDragging)return;
   const line=lines[activeLineId];
   if(!line||line.nodes.length<2)return;
   const{insertAfterIndex}=findClosestSegment(line,e.latlng);
@@ -646,26 +628,37 @@ function onMouseMove(e){
   if(insertPreviewLine){map.removeLayer(insertPreviewLine);insertPreviewLine=null;}
   const nodes=line.nodes;
   let prevPt=null,nextPt=null,hintText='';
+  const insLabel=editMode==='waypoint'?'Insert waypoint':'Insert station';
   if(insertAfterIndex===-1){nextPt=getNodeLatLng(nodes[0]);hintText='Add before start';}
-  else if(insertAfterIndex>=nodes.length-1){prevPt=getNodeLatLng(nodes[nodes.length-1]);hintText='Add after end';}
-  else{prevPt=getNodeLatLng(nodes[insertAfterIndex]);nextPt=getNodeLatLng(nodes[insertAfterIndex+1]);hintText=editMode==='waypoint'?'Insert waypoint':'Insert station';}
+  else if(insertAfterIndex>=nodes.length-1){
+    prevPt=getNodeLatLng(nodes[nodes.length-1]);
+    if(line.circular){nextPt=getNodeLatLng(nodes[0]);hintText=insLabel;}
+    else hintText='Add after end';
+  }else{prevPt=getNodeLatLng(nodes[insertAfterIndex]);nextPt=getNodeLatLng(nodes[insertAfterIndex+1]);hintText=insLabel;}
   const pts=[];
-  if(prevPt)pts.push(prevPt);pts.push([e.latlng.lat,e.latlng.lng]);if(nextPt)pts.push(nextPt);
-  if(pts.length>=2){insertPreviewLine=L.polyline(pts,{color:editMode==='waypoint'?'#888':line.bg,weight:4,opacity:0.65,dashArray:'7 5',lineJoin:'round',lineCap:'round'});insertPreviewLine.addTo(map);}
+  if(prevPt)pts.push(prevPt);
+  pts.push([e.latlng.lat,e.latlng.lng]);
+  if(nextPt)pts.push(nextPt);
+  if(pts.length>=2){
+    insertPreviewLine=L.polyline(pts,{color:editMode==='waypoint'?'#888':line.bg,weight:4,opacity:0.65,dashArray:'7 5',lineJoin:'round',lineCap:'round',interactive:false});
+    insertPreviewLine.addTo(map);
+  }
   const hint=document.getElementById('insert-hint');
   if(hint){const cp=map.latLngToContainerPoint(e.latlng);hint.style.display='block';hint.style.left=cp.x+'px';hint.style.top=cp.y+'px';hint.textContent=hintText;}
 }
 function onMouseUp(){
-  if(dragState){
-    const sid=dragState.sid;
-    setTimeout(()=>{if(sid&&stations[sid]){stations[sid].lineIds.forEach(lid=>{if(lines[lid])lines[lid]._stationFracs=null;});}dragState=null;},60);
-    map.dragging.enable();
-  }
+  if(!dragState||dragState.ending)return;
+  dragState.ending=true;
+  const ds=dragState;
+  // небольшая задержка, чтобы click-обработчики успели увидеть dragState.moved
+  setTimeout(()=>{if(dragState===ds)dragState=null;},60);
+  if(map)map.dragging.enable();
 }
+document.addEventListener('mouseup',onMouseUp);
 function onMapMouseOut(){clearInsertPreview();}
 
 function addTransfer(a,b){
-  if(a===b)return;
+  if(a===b||!stations[a]||!stations[b])return;
   if(Object.values(transfers).some(t=>(t.a===a&&t.b===b)||(t.a===b&&t.b===a)))return;
   const id=genId();
   transfers[id]={id,a,b};
@@ -676,11 +669,12 @@ function deleteTransfer(id){
   delete transfers[id];redrawTransfers();refreshMarker(stations[t.a]);refreshMarker(stations[t.b]);updateStats();
 }
 function redrawTransfers(){
+  if(!map)return;
   transferLines.forEach(l=>map.removeLayer(l));transferLines=[];
   const color=document.documentElement.getAttribute('data-theme')==='dark'?'#fff':'#000';
   Object.values(transfers).forEach(t=>{
     const s1=stations[t.a],s2=stations[t.b];if(!s1||!s2)return;
-    const pl=L.polyline([s1.latlng,s2.latlng],{color,weight:4,opacity:0.9,lineCap:'round'});
+    const pl=L.polyline([s1.latlng,s2.latlng],{color,weight:4,opacity:0.9,lineCap:'round',interactive:false});
     pl.addTo(map);transferLines.push(pl);
   });
 }
@@ -698,16 +692,16 @@ function openPopup(sid){
   const sub=document.createElement('div');sub.className='pp-sub';sub.textContent='Station';
   const linesRow=document.createElement('div');linesRow.className='pp-lines';
   st.lineIds.forEach(lid=>{const l=lines[lid];if(!l)return;const b=document.createElement('div');b.className='plb';b.style.background=l.bg;b.style.color=l.fg;b.textContent=l.label;linesRow.appendChild(b);});
-  if(linesRow.innerHTML==='')linesRow.innerHTML='<span style="color:var(--text-tertiary);font-size:11px">No lines</span>';
+  if(!linesRow.children.length)linesRow.innerHTML='<span style="color:var(--text-tertiary);font-size:11px">No lines</span>';
   const acts=document.createElement('div');acts.className='pp-actions';
-  const cb=document.createElement('button');cb.className='pp-btn pp-connect';cb.textContent='🔗 Построить соединение';
-  cb.addEventListener('click',()=>{connectingSource=sid;map.closePopup();showToast('Click destination');});
+  const cb=document.createElement('button');cb.className='pp-btn pp-connect';cb.textContent='🔗 Build transfer';
+  cb.addEventListener('click',()=>{connectingSource=sid;map.closePopup();showToast('Click the destination station');});
   acts.appendChild(cb);
-  if(activeLineId){
+  if(activeLineId&&lines[activeLineId]){
     const al=lines[activeLineId];
     const isOn=al.nodes.some(n=>n.type==='station'&&n.id===sid);
     if(!isOn){
-      const lb=document.createElement('button');lb.className='pp-btn pp-transfer';lb.textContent='🔗 Соединить с линией '+al.label;
+      const lb=document.createElement('button');lb.className='pp-btn pp-transfer';lb.textContent='🔗 Add to line '+al.label;
       lb.addEventListener('click',()=>{
         const{insertAfterIndex}=findClosestSegment(al,st.latlng);
         const node={type:'station',id:sid};
@@ -715,8 +709,8 @@ function openPopup(sid){
         else if(insertAfterIndex>=al.nodes.length-1)al.nodes.push(node);
         else al.nodes.splice(insertAfterIndex+1,0,node);
         if(!st.lineIds.includes(al.id))st.lineIds.push(al.id);
-        al._stationFracs=null;redrawLine(al);refreshMarker(st);map.closePopup();updateRouteDiagram();updateTrainSection();
-        showToast('Connected to '+al.label);
+        redrawLine(al);refreshMarker(st);map.closePopup();updateRouteDiagram();
+        showToast('Added to '+al.label);
       });
       acts.appendChild(lb);
     }
@@ -729,8 +723,9 @@ function openPopup(sid){
       const oSid=t.a===sid?t.b:t.a;const o=stations[oSid];if(!o)return;
       const row=document.createElement('div');row.style.cssText='display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)';
       const nm=document.createElement('span');nm.textContent=o.name;nm.style.cursor='pointer';nm.onclick=()=>map.setView(o.latlng,14);
-      const del=document.createElement('button');del.textContent='×';del.style.cssText='background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px';del.onclick=()=>deleteTransfer(t.id);
-      row.append(nm,del);acts.appendChild(row);
+      const dl=document.createElement('button');dl.textContent='×';dl.style.cssText='background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px';
+      dl.onclick=()=>{deleteTransfer(t.id);openPopup(sid);};
+      row.append(nm,dl);acts.appendChild(row);
     });
   }
   const del=document.createElement('button');del.className='pp-btn pp-del';del.textContent='Delete Station';del.style.marginTop='12px';
@@ -742,28 +737,41 @@ function openPopup(sid){
 
 function deleteStation(sid){
   const st=stations[sid];if(!st)return;
+  if(connectingSource===sid)connectingSource=null;
+  // 1. трансферы
+  const affected=[];
+  Object.keys(transfers).forEach(id=>{
+    const t=transfers[id];
+    if(t.a===sid||t.b===sid){affected.push(t.a===sid?t.b:t.a);delete transfers[id];}
+  });
+  // 2. маркер и линии
   if(st.marker)map.removeLayer(st.marker);
-  st.lineIds.forEach(lid=>{const l=lines[lid];if(!l)return;l.nodes=l.nodes.filter(n=>!(n.type==='station'&&n.id===sid));l._stationFracs=null;redrawLine(l);});
+  st.lineIds.forEach(lid=>{
+    const l=lines[lid];if(!l)return;
+    l.nodes=l.nodes.filter(n=>!(n.type==='station'&&n.id===sid));
+    redrawLine(l);
+  });
+  delete stations[sid];
+  // 3. ветки депо, начинавшиеся на этой станции
   Object.values(depots).forEach(dp=>{
-    dp.branches.forEach(b=>{
-      if(b.startStationId===sid){
-        const line=lines[b.lineId];
-        if(line){
-          let bestSid=null,bestD=Infinity;
-          line.nodes.forEach(n=>{
-            if(n.type!=='station')return;
-            const s=stations[n.id];if(!s)return;
-            const d=L.latLng(dp.latlng).distanceTo(L.latLng(s.latlng));
-            if(d<bestD){bestD=d;bestSid=n.id;}
-          });
-          if(bestSid){b.startStationId=bestSid;redrawBranch(dp,b);}
-          else{b.polylines.forEach(p=>map.removeLayer(p));b.waypoints.forEach(w=>{if(w.marker)map.removeLayer(w.marker);});dp.branches=dp.branches.filter(x=>x!==b);}
-        }
+    dp.branches.slice().forEach(b=>{
+      if(b.startStationId!==sid)return;
+      const line=lines[b.lineId];
+      let bestSid=null,bestD=Infinity;
+      if(line){
+        line.nodes.forEach(n=>{
+          if(n.type!=='station')return;
+          const s=stations[n.id];if(!s)return;
+          const d=L.latLng(dp.latlng).distanceTo(L.latLng(s.latlng));
+          if(d<bestD){bestD=d;bestSid=n.id;}
+        });
       }
+      if(bestSid){b.startStationId=bestSid;redrawBranch(dp,b);}
+      else removeBranch(dp,b);
     });
   });
-  Object.keys(transfers).forEach(id=>{const t=transfers[id];if(t.a===sid||t.b===sid)deleteTransfer(id);});
-  delete stations[sid];
+  redrawTransfers();
+  affected.forEach(id=>refreshMarker(stations[id]));
   updateRouteDiagram();updateStats();
 }
 
@@ -779,55 +787,56 @@ function toggleDepotMode(force){
 
 function createDepot(latlng){
   const id=genId();
-  const dp={id,latlng:[latlng.lat,latlng.lng],name:'Depot '+(Object.keys(depots).length+1),marker:null,branches:[]};
+  const dp={id,latlng:[latlng.lat,latlng.lng],name:nextName('Depot',depots),marker:null,branches:[]};
   depots[id]=dp;
   createDepotMarker(dp);
-
-  let bestLine = null, bestSid = null, bestDist = Infinity;
-  Object.values(lines).forEach(l => {
-    l.nodes.forEach(n => {
-      if (n.type !== 'station') return;
-      const st = stations[n.id];
-      if (!st) return;
-      const d = L.latLng(latlng).distanceTo(L.latLng(st.latlng));
-      if (d < bestDist) { bestDist = d; bestLine = l; bestSid = n.id; }
+  let bestLine=null,bestSid=null,bestDist=Infinity;
+  Object.values(lines).forEach(l=>{
+    l.nodes.forEach(n=>{
+      if(n.type!=='station')return;
+      const st=stations[n.id];if(!st)return;
+      const d=L.latLng(latlng).distanceTo(L.latLng(st.latlng));
+      if(d<bestDist){bestDist=d;bestLine=l;bestSid=n.id;}
     });
   });
-
-  if (bestLine && bestSid) {
-    const branch = { id: genId(), lineId: bestLine.id, startStationId: bestSid, waypoints: [], polylines: [] };
+  let msg='Depot added';
+  if(bestLine&&bestSid){
+    const branch={id:genId(),lineId:bestLine.id,startStationId:bestSid,waypoints:[],polylines:[]};
     dp.branches.push(branch);
-    redrawBranch(dp, branch);
-    showToast('Auto-connected to ' + stations[bestSid].name);
+    redrawBranch(dp,branch);
+    msg+=' • connected to '+stations[bestSid].name;
   }
-
   toggleDepotMode(false);
   openDepotPopup(id);
-  showToast('Depot added');
+  showToast(msg);
 }
 function createDepotMarker(dp){
   const el=document.createElement('div');el.className='depot-marker';el.textContent='🏭';el.title=dp.name;
   const icon=L.divIcon({html:el,className:'',iconSize:[34,34],iconAnchor:[17,17]});
   const m=L.marker(dp.latlng,{icon,draggable:false,zIndexOffset:400});
   m.on('click',ev=>{L.DomEvent.stopPropagation(ev);if(dragState&&dragState.moved)return;openDepotPopup(dp.id);});
-  m.on('mousedown',ev=>{L.DomEvent.stopPropagation(ev);dragState={sid:null,depotId:dp.id,moved:false};map.dragging.disable();});
+  m.on('mousedown',ev=>{
+    if(ev.originalEvent&&ev.originalEvent.button!==0)return;
+    L.DomEvent.stopPropagation(ev);
+    dragState={sid:null,depotId:dp.id,moved:false,start:ev.containerPoint};
+    map.dragging.disable();
+  });
   m.addTo(map);dp.marker=m;
 }
 function deleteDepot(dpid){
   const dp=depots[dpid];if(!dp)return;
-  dp.branches.forEach(b=>{b.polylines.forEach(p=>map.removeLayer(p));b.waypoints.forEach(w=>{if(w.marker)map.removeLayer(w.marker);});});
+  dp.branches.slice().forEach(b=>removeBranch(dp,b));
   if(dp.marker)map.removeLayer(dp.marker);
   delete depots[dpid];
 }
 function redrawBranch(dp,branch){
   branch.polylines.forEach(p=>map.removeLayer(p));branch.polylines=[];
+  transferLines.forEach(l=>l.bringToFront());
   const line=lines[branch.lineId];
   const startSt=stations[branch.startStationId];
   if(!line||!startSt)return;
   const pts=[startSt.latlng,...branch.waypoints.map(w=>w.latlng),dp.latlng];
-  let draw;
-  if(line.smooth!==false&&pts.length>=2)draw=catmullRom(pts,false);
-  else draw=pts;
+  const draw=(line.smooth!==false&&pts.length>=2)?catmullRom(pts,false):pts;
   const glow=L.polyline(draw,{color:line.bg,weight:12,opacity:0.15,lineJoin:'round',lineCap:'round'});
   const main=L.polyline(draw,{color:line.bg,weight:5,opacity:0.92,lineJoin:'round',lineCap:'round'});
   glow.addTo(map);main.addTo(map);
@@ -847,6 +856,9 @@ function openDepotPopup(dpid){
   const branchList=document.createElement('div');branchList.style.cssText='padding:8px 14px;border-bottom:1px solid var(--border)';
   const bTitle=document.createElement('div');bTitle.style.cssText='font-size:10px;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:6px;font-weight:600';bTitle.textContent='Branches';
   branchList.appendChild(bTitle);
+
+  const sel=document.createElement('select');sel.className='sselect';sel.style.cssText='width:100%;margin-bottom:6px;font-size:12px;max-width:none';
+
   function rebuildBL(){
     while(branchList.children.length>1)branchList.removeChild(branchList.lastChild);
     if(dp.branches.length===0){const e=document.createElement('div');e.style.cssText='font-size:11px;color:var(--text-tertiary);font-style:italic';e.textContent='No branches yet.';branchList.appendChild(e);return;}
@@ -855,11 +867,12 @@ function openDepotPopup(dpid){
       if(!line||!sSt)return;
       const row=document.createElement('div');row.style.cssText='padding:6px 0;border-bottom:1px solid var(--border-soft)';
       const top=document.createElement('div');top.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:4px';
-      const bd=document.createElement('div');bd.style.cssText=`width:20px;height:20px;border-radius:50%;background:${line.bg};color:${line.fg};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0`;bd.textContent=line.label;
+      const bd=document.createElement('div');bd.style.cssText='width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0';
+      bd.style.background=line.bg;bd.style.color=line.fg;bd.textContent=line.label;
       const nm=document.createElement('span');nm.style.cssText='flex:1;color:var(--text);font-size:11px';nm.textContent='From '+sSt.name;
       const wc=document.createElement('span');wc.style.cssText='font-size:10px;color:var(--text-tertiary)';wc.textContent=b.waypoints.length+' wp';
       const rm=document.createElement('button');rm.textContent='×';rm.style.cssText='background:none;border:1px solid var(--danger);color:var(--danger);border-radius:3px;padding:0 4px;cursor:pointer;font-size:11px';
-      rm.addEventListener('click',()=>{b.polylines.forEach(p=>map.removeLayer(p));b.waypoints.forEach(w=>{if(w.marker)map.removeLayer(w.marker);});dp.branches=dp.branches.filter(x=>x!==b);rebuildBL();rebuildSel();updateRouteDiagram();});
+      rm.addEventListener('click',()=>{removeBranch(dp,b);rebuildBL();rebuildSel();updateRouteDiagram();});
       top.append(bd,nm,wc,rm);row.appendChild(top);
       const wpRow=document.createElement('div');wpRow.style.cssText='display:flex;gap:4px;margin-top:4px';
       const aw=document.createElement('button');aw.textContent='+ Waypoint';aw.style.cssText='flex:1;padding:3px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);border-radius:3px;cursor:pointer;font-size:10px;font-weight:600';
@@ -868,29 +881,41 @@ function openDepotPopup(dpid){
       branchList.appendChild(row);
     });
   }
-  rebuildBL();
-  const addArea=document.createElement('div');addArea.className='pp-add';
-  const addL=document.createElement('div');addL.className='pp-add-label';addL.textContent='Add branch to line:';addArea.appendChild(addL);
-  const sel=document.createElement('select');sel.className='sselect';sel.style.cssText='width:100%;margin-bottom:6px;font-size:12px;max-width:none';
   function rebuildSel(){
     sel.innerHTML='';
-    const avail=Object.values(lines).filter(l=>l.nodes.filter(n=>n.type==='station').length>0);
-    if(!avail.length){const o=document.createElement('option');o.value='';o.textContent='— No lines —';sel.appendChild(o);}
-    avail.forEach(l=>{const alr=dp.branches.some(b=>b.lineId===l.id);const o=document.createElement('option');o.value=l.id;o.textContent=l.label+' — '+(l.title||l.label)+(alr?' (has branch)':'');if(alr)o.disabled=true;sel.appendChild(o);});
+    const avail=Object.values(lines).filter(l=>l.nodes.some(n=>n.type==='station'));
+    if(!avail.length){const o=document.createElement('option');o.value='';o.textContent='— No lines —';sel.appendChild(o);return;}
+    let firstFree=-1;
+    avail.forEach((l,i)=>{
+      const alr=dp.branches.some(b=>b.lineId===l.id);
+      const o=document.createElement('option');o.value=l.id;
+      o.textContent=l.label+' — '+(l.title||l.label)+(alr?' (has branch)':'');
+      if(alr)o.disabled=true;else if(firstFree<0)firstFree=i;
+      sel.appendChild(o);
+    });
+    sel.selectedIndex=firstFree>=0?firstFree:0;
   }
-  rebuildSel();
+  rebuildBL();rebuildSel();
+
+  const addArea=document.createElement('div');
+  addArea.style.cssText='padding:8px 14px;border-bottom:1px solid var(--border)';
+  const addL=document.createElement('div');
+  addL.style.cssText='font-size:10px;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:6px;font-weight:600';
+  addL.textContent='Add branch to line:';addArea.appendChild(addL);
   const addBtn=document.createElement('button');addBtn.textContent='+ Add Branch';addBtn.style.cssText='width:100%;padding:6px;background:var(--success-soft);border:1px solid var(--success);color:var(--success);border-radius:4px;cursor:pointer;font-size:12px;font-family:var(--font)';
   addBtn.addEventListener('click',()=>{
     const lid=sel.value;if(!lid)return;
+    if(dp.branches.some(b=>b.lineId===lid)){showToast('Branch already exists');return;}
     const line=lines[lid];if(!line)return;
     let bestSid=null,bestD=Infinity;
-    line.nodes.forEach(n=>{if(n.type!=='station')return;const st=stations[n.id];if(!st)return;const d=L.latLng(dp.latlng).distanceTo(L.latLng(st.latlng));if(d<bestD){bestD=d;bestSid=n.id;}});
+    line.nodes.forEach(n=>{if(n.type!=='station')return;const s=stations[n.id];if(!s)return;const d=L.latLng(dp.latlng).distanceTo(L.latLng(s.latlng));if(d<bestD){bestD=d;bestSid=n.id;}});
     if(!bestSid){showToast('No stations');return;}
     const branch={id:genId(),lineId:lid,startStationId:bestSid,waypoints:[],polylines:[]};
     dp.branches.push(branch);redrawBranch(dp,branch);rebuildBL();rebuildSel();updateRouteDiagram();
     showToast('Branch added from '+stations[bestSid].name);
   });
   addArea.append(sel,addBtn);
+
   const acts=document.createElement('div');acts.className='pp-actions';
   const dlt=document.createElement('button');dlt.className='pp-btn pp-del';dlt.textContent='Delete Depot';
   dlt.addEventListener('click',()=>{deleteDepot(dpid);map.closePopup();});
@@ -912,7 +937,8 @@ function catmullRom(pts,closed,steps=14){
       out.push([lat,lng]);
     }
   }
-  if(!closed)out.push(pts[pts.length-1]);
+  // замкнутая линия должна возвращаться в начальную точку, иначе остаётся зазор
+  out.push(closed?out[0]:pts[pts.length-1]);
   return out;
 }
 function getLinePoints(line){return line.nodes.map(n=>getNodeLatLng(n)).filter(Boolean);}
@@ -920,784 +946,241 @@ function redrawLine(line){
   line.polylines.forEach(p=>map.removeLayer(p));line.polylines=[];
   const pts=getLinePoints(line);if(pts.length<2)return;
   const closed=line.circular&&pts.length>2;
-  let drawPts=closed?[...pts,pts[0]]:pts;
-  let draw;
-  if(line.smooth!==false)draw=catmullRom(closed?drawPts.slice(0,-1):drawPts,closed);
-  else draw=drawPts;
+  const draw=line.smooth!==false?catmullRom(pts,closed):(closed?[...pts,pts[0]]:pts);
   const glow=L.polyline(draw,{color:line.bg,weight:12,opacity:0.15,lineJoin:'round',lineCap:'round'});
   const main=L.polyline(draw,{color:line.bg,weight:5,opacity:0.92,lineJoin:'round',lineCap:'round'});
   glow.addTo(map);main.addTo(map);
   line.polylines=[glow,main];
-}
-function buildLinePath(line){
-  const pts=getLinePoints(line);if(pts.length<2)return[];
-  const closed=line.circular&&pts.length>2;
-  let drawPts=closed?[...pts,pts[0]]:pts;
-  if(line.smooth!==false)return catmullRom(closed?drawPts.slice(0,-1):drawPts,closed,24);
-  const out=[];
-  for(let i=0;i<drawPts.length-1;i++){
-    const a=drawPts[i],b=drawPts[i+1];
-    const steps=Math.max(16,Math.round(L.latLng(a).distanceTo(L.latLng(b))/25));
-    for(let s=0;s<steps;s++){const t=s/steps;out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);}
-  }
-  out.push(drawPts[drawPts.length-1]);
-  return out;
-}
-function posOnPath(path,t){
-  if(path.length<2)return path[0];
-  const total=path.length-1;
-  const fp=Math.max(0,Math.min(1,t))*total;
-  const i0=Math.floor(fp),i1=Math.min(i0+1,total),f=fp-i0;
-  const a=path[i0],b=path[i1];
-  return[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f];
-}
-function buildStationFracs(line){
-  const n=line.nodes.length;if(n<2)return[];
-  const denom=line.circular?n:(n-1);
-  const res=[];
-  line.nodes.forEach((node,idx)=>{if(node.type!=='station')return;if(!stations[node.id])return;res.push({sid:node.id,frac:idx/denom});});
-  res.sort((a,b)=>a.frac-b.frac);
-  return res;
-}
-function wasCrossed(prevFrac,curFrac,stationFrac,dir,circular){
-  if(!circular){
-    if(dir>0)return stationFrac>prevFrac&&stationFrac<=curFrac;
-    return stationFrac<prevFrac&&stationFrac>=curFrac;
-  }else{
-    if(dir>0){if(prevFrac<=curFrac)return stationFrac>prevFrac&&stationFrac<=curFrac;return stationFrac>prevFrac||stationFrac<=curFrac;}
-    else{if(prevFrac>=curFrac)return stationFrac<prevFrac&&stationFrac>=curFrac;return stationFrac<prevFrac||stationFrac>=curFrac;}
-  }
+  transferLines.forEach(l=>l.bringToFront());
 }
 
-function isTrainActive(t){const s=t.status||'running';return s==='running'||s==='testing'||s==='freight';}
-function setTrainStatus(lineId,trainId,newStatus){
-  const line=lines[lineId];if(!line)return;
-  const train=line.trains.find(t=>t.id===trainId);if(!train)return;
-  const wasActive=isTrainActive(train);train.status=newStatus;
-  const isNowActive=isTrainActive(train);
-  if(wasActive&&!isNowActive){train.markers.forEach(m=>map.removeLayer(m));train.markers=[];if(!anyTrainRunning())stopAnimLoop();}
-  else if(!wasActive&&isNowActive){spawnTrainMarkers(train,line);startAnimLoop();}
-  buildLinesPanel();updateTrainList();updateTrainTable();updateStatTrains();
-}
-function refreshModelSuggestions(){
-  const list=document.getElementById('nt-model-list');if(!list)return;
-  const models=new Set();
-  Object.values(lines).forEach(l=>{(l.trains||[]).forEach(t=>{if(t.model)models.add(t.model);});});
-  list.innerHTML='';
-  models.forEach(m=>{const o=document.createElement('option');o.value=m;list.appendChild(o);});
-}
-function toggleNewTrainForm(){
-  const f=document.getElementById('new-train-form');
-  f.style.display=f.style.display==='none'?'block':'none';
-  if(f.style.display==='block'){updateTrainCountPreview();refreshModelSuggestions();}
-}
-function updateTrainCountPreview(){
-  const total=parseInt(document.getElementById('nt-total').value)||0;
-  const per=parseInt(document.getElementById('nt-per').value)||1;
-  const count=Math.floor(total/Math.max(1,per));
-  document.getElementById('nt-count-preview').textContent='→ '+count+' sets';
-}
-document.addEventListener('input',e=>{
-  if(e.target.id==='nt-total'||e.target.id==='nt-per')updateTrainCountPreview();
-  if(e.target.id==='et-total'||e.target.id==='et-per'){
-    const total=parseInt(document.getElementById('et-total').value)||0;
-    const per=parseInt(document.getElementById('et-per').value)||1;
-    document.getElementById('et-count-preview').textContent='→ '+Math.floor(total/Math.max(1,per))+' sets';
-  }
-});
-
-function addTrain(){
-  if(!activeLineId)return;
-  const model=document.getElementById('nt-model').value.trim()||'Train';
-  const total=parseInt(document.getElementById('nt-total').value)||60;
-  const per=parseInt(document.getElementById('nt-per').value)||10;
-  const count=Math.max(1,Math.floor(total/Math.max(1,per)));
-  const line=lines[activeLineId];if(!line)return;
-  const tid=genId();
-  const train={id:tid,lineId:activeLineId,model,totalCars:total,carsPerSet:per,count,status:'running',isFreight:false,markers:[],progress:[],directions:[],dwellUntil:[],prevFrac:[]};
-  for(let i=0;i<count;i++){
-    train.progress.push(i/count);
-    train.directions.push(line.circular&&i>=Math.ceil(count/2)?-1:1);
-    train.dwellUntil.push(0);train.prevFrac.push(train.progress[i]);
-  }
-  line.trains.push(train);
-  spawnTrainMarkers(train,line);
-  startAnimLoop();buildLinesPanel();updateTrainList();updateTrainTable();
-  document.getElementById('new-train-form').style.display='none';
-  document.getElementById('nt-model').value='';
-  showToast('Added '+count+' train'+(count>1?'s':''));
-}
-
-function getDepotConnectionsForLine(line){
-  const result=[];
-  Object.values(depots).forEach(dp=>{
-    const branch=dp.branches.find(b=>b.lineId===line.id);
-    if(branch)result.push({depot:dp,branch});
-  });
-  return result;
-}
-
-function addFreightTrain(){
-  if(!activeLineId)return;
-  const line=lines[activeLineId];
-  const depotConns=getDepotConnectionsForLine(line);
-  if(depotConns.length<2){showToast('Need 2+ depots on this line');return;}
-  const activeCount=line.trains.filter(t=>t.isFreight&&t.freightActive).length;
-  if(activeCount>=2){showToast('Max 2 active freight trains per line');return;}
-  spawnFreight(line,depotConns);
-}
-
-function spawnFreight(line,depotConns){
-  const shuffled=[...depotConns].sort(()=>Math.random()-0.5);
-  const from=shuffled[0],to=shuffled[1];
-  const pathInfo=buildFreightPath(from.depot,from.branch,to.depot,to.branch,line);
-  if(!pathInfo){showToast('Cannot build path');return;}
-  const train={
-    id:genId(),lineId:line.id,
-    model:'Freight '+Math.floor(Math.random()*90+10),
-    totalCars:20,carsPerSet:5,count:1,
-    status:'freight',isFreight:true,
-    freightActive:true,
-    freightPath:pathInfo.path,freightProgress:0,
-    fromDepotId:from.depot.id,toDepotId:to.depot.id,
-    _branchAEndIdx:pathInfo.branchAEndIdx,
-    _branchBStartIdx:pathInfo.branchBStartIdx,
-    _lineStartFrac:pathInfo.lineStartFrac,
-    _lineEndFrac:pathInfo.lineEndFrac,
-    _lineProgress:pathInfo.lineStartFrac,
-    markers:[],progress:[0],directions:[1],dwellUntil:[0],prevFrac:[0]
-  };
-  line.trains.push(train);
-  spawnFreightMarker(train,line);
-  startAnimLoop();buildLinesPanel();updateTrainList();updateTrainTable();
-  showToast('Freight dispatched: '+depots[train.fromDepotId].name+' → '+depots[train.toDepotId].name);
-}
-
-function buildFreightPath(fromDp,fromBranch,toDp,toBranch,line){
-  const fromSt=stations[fromBranch.startStationId];
-  const toSt=stations[toBranch.startStationId];
-  if(!fromSt||!toSt||fromSt.id===toSt.id)return null;
-  const branchAPts=[fromDp.latlng,...fromBranch.waypoints.map(w=>w.latlng).reverse(),fromSt.latlng];
-  const branchAPath=line.smooth!==false?catmullRom(branchAPts,false):branchAPts;
-  const linePath=buildLinePath(line);
-  const idxA=findClosestPathIdx(linePath,fromSt.latlng);
-  const idxB=findClosestPathIdx(linePath,toSt.latlng);
-  let lineSlice;
-  if(idxA<=idxB)lineSlice=linePath.slice(idxA,idxB+1);
-  else lineSlice=linePath.slice(idxB,idxA+1).reverse();
-  const branchBPts=[toSt.latlng,...toBranch.waypoints.map(w=>w.latlng),toDp.latlng];
-  const branchBPath=line.smooth!==false?catmullRom(branchBPts,false):branchBPts;
-  const path=[...branchAPath,...lineSlice.slice(1),...branchBPath.slice(1)];
-  const branchAEndIdx=branchAPath.length-1;
-  const branchBStartIdx=path.length-branchBPath.length+1;
-  const lineStartFrac=idxA/(linePath.length-1);
-  const lineEndFrac=idxB/(linePath.length-1);
-  return{path,branchAEndIdx,branchBStartIdx,lineStartFrac,lineEndFrac};
-}
-function findClosestPathIdx(path,target){
-  let bestIdx=0,bestD=Infinity;
-  const tgt=L.latLng(target);
-  for(let i=0;i<path.length;i++){
-    const d=L.latLng(path[i]).distanceTo(tgt);
-    if(d<bestD){bestD=d;bestIdx=i;}
-  }
-  return bestIdx;
-}
-function spawnFreightMarker(train,line){
-  train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
-  if(!train.freightActive||!train.freightPath.length)return;
-  const pos=train.freightPath[0];
-  const size=14;
-  const el=document.createElement('div');el.className='train-marker';
-  el.style.cssText=`width:${size}px;height:${size}px;background:#9b59b6;border:2px solid rgba(255,255,255,0.6);color:#fff;`;
-  el.title=train.model;
-  const icon=L.divIcon({html:el,className:'',iconSize:[size,size],iconAnchor:[size/2,size/2]});
-  const m=L.marker(L.latLng(pos),{icon,zIndexOffset:500,interactive:false});
-  m.addTo(map);train.markers.push(m);
-}
-
-function animateFreights(now){
-  Object.values(lines).forEach(line=>{
-    line.trains.forEach(train=>{
-      if(!train.isFreight)return;
-      if(!train.freightActive){
-        if(now<(train._respawnCheckAt||0))return;
-        train._respawnCheckAt=now+1000;
-        if(Math.random()<0.05){
-          const activeCount=line.trains.filter(t=>t.isFreight&&t.freightActive).length;
-          if(activeCount>=2)return;
-          const depotConns=getDepotConnectionsForLine(line);
-          if(depotConns.length<2)return;
-          const shuffled=[...depotConns].sort(()=>Math.random()-0.5);
-          const from=shuffled[0],to=shuffled[1];
-          const pathInfo=buildFreightPath(from.depot,from.branch,to.depot,to.branch,line);
-          if(!pathInfo)return;
-          train.freightPath=pathInfo.path;
-          train.freightProgress=0;
-          train.freightActive=true;
-          train.fromDepotId=from.depot.id;
-          train.toDepotId=to.depot.id;
-          train._branchAEndIdx=pathInfo.branchAEndIdx;
-          train._branchBStartIdx=pathInfo.branchBStartIdx;
-          train._lineStartFrac=pathInfo.lineStartFrac;
-          train._lineEndFrac=pathInfo.lineEndFrac;
-          train._lineProgress=pathInfo.lineStartFrac;
-          train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
-          spawnFreightMarker(train,line);
-          showToast(`Freight ${train.model} respawned: ${depots[train.fromDepotId].name} → ${depots[train.toDepotId].name}`);
-        }
-        return;
-      }
-      const totalPathLen=train.freightPath.length-1;
-      if(totalPathLen<1){train.freightActive=false;return;}
-
-      if (train._blocked) {
-         const idx = Math.floor(train.freightProgress * totalPathLen);
-         const pos = train.freightPath[Math.min(idx, totalPathLen)];
-         if (train.markers[0]) train.markers[0].setLatLng(L.latLng(pos));
-         return;
-      }
-
-      train.freightProgress+=FREIGHT_SPEED*lastDt;
-      if(train.freightProgress>=1){
-        train.freightProgress=1;
-        train.freightActive=false;
-        train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
-        train._respawnCheckAt=now+1000;
-        showToast(`${train.model} reached ${depots[train.toDepotId]?.name||'depot'}`);
-        return;
-      }
-      const idx=Math.floor(train.freightProgress*totalPathLen);
-      const pos=train.freightPath[idx];
-      if(train.markers[0])train.markers[0].setLatLng(L.latLng(pos));
-      if(idx<=train._branchAEndIdx){train._lineProgress=train._lineStartFrac;}
-      else if(idx>=train._branchBStartIdx){train._lineProgress=train._lineEndFrac;}
-      else{
-        const ratio=(idx-train._branchAEndIdx)/Math.max(1,train._branchBStartIdx-train._branchAEndIdx);
-        train._lineProgress=train._lineStartFrac+ratio*(train._lineEndFrac-train._lineStartFrac);
-      }
-    });
-  });
-}
-
-function spawnTrainMarkers(train,line){
-  train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
-  if(!isTrainActive(train)||train.isFreight)return;
-  const path=buildLinePath(line);if(!path.length)return;
-  if(!train.dwellUntil||train.dwellUntil.length!==train.count){
-    train.dwellUntil=[];train.prevFrac=[];
-    for(let i=0;i<train.count;i++){train.dwellUntil.push(0);train.prevFrac.push(train.progress[i]);}
-  }
-  for(let i=0;i<train.count;i++){
-    const posArr=posOnPath(path,train.progress[i]);
-    const size=12;
-    const el=document.createElement('div');el.className='train-marker';
-    el.style.cssText=`width:${size}px;height:${size}px;background:${line.bg};border:2px solid ${line.fg==='#fff'?'rgba(255,255,255,0.6)':'rgba(0,0,0,0.4)'};color:${line.fg};`;
-    el.title=train.model;
-    const icon=L.divIcon({html:el,className:'',iconSize:[size,size],iconAnchor:[size/2,size/2]});
-    const m=L.marker(L.latLng(posArr),{icon,zIndexOffset:500,interactive:false});
-    m.addTo(map);train.markers.push(m);
-  }
-}
-
-function startAnimLoop(){
-  if(trainAnimFrame)return;
-  lastAnimTime=performance.now();
-  function loop(now){
-    try {
-      const dt=Math.min(now-lastAnimTime,100);lastAnimTime=now;lastDt=dt;
-      animateTrains(dt,now);
-      animateFreights(now);
-    } catch(e) {
-      console.error("Animation loop error:", e);
-    }
-    trainAnimFrame=requestAnimationFrame(loop);
-  }
-  trainAnimFrame=requestAnimationFrame(loop);
-}
-let lastDt=16;
-function stopAnimLoop(){if(trainAnimFrame){cancelAnimationFrame(trainAnimFrame);trainAnimFrame=null;}}
-function anyTrainRunning(){return Object.values(lines).some(l=>l.trains&&l.trains.some(t=>isTrainActive(t)));}
-
-function updateBlockages(line) {
-  const activeCars = [];
-  line.trains.forEach(train => {
-    if (!isTrainActive(train)) return;
-    if (train.isFreight) {
-      if (train.freightActive) activeCars.push({ train, idx: -1, progress: train._lineProgress, dir: 1 });
-    } else {
-      for (let i = 0; i < train.count; i++) {
-        activeCars.push({ train, idx: i, progress: train.progress[i], dir: train.directions[i] });
-      }
-    }
-  });
-
-  line.trains.forEach(t => { t._blockedCars = []; t._blocked = false; });
-
-  activeCars.forEach((carA, a) => {
-    let blocked = false;
-    for (let b = 0; b < activeCars.length; b++) {
-      if (a === b) continue;
-      const carB = activeCars[b];
-      if (carA.dir !== carB.dir) continue;
-      let gap;
-      if (carA.dir > 0) {
-        gap = carB.progress - carA.progress;
-        if (line.circular && gap < 0) gap += 1;
-      } else {
-        gap = carA.progress - carB.progress;
-        if (line.circular && gap < 0) gap += 1;
-      }
-      if (gap > 0 && gap < MIN_GAP) {
-        blocked = true;
-        break;
-      }
-    }
-    if (carA.idx === -1) {
-      carA.train._blocked = blocked;
-    } else {
-      carA.train._blockedCars[carA.idx] = blocked;
-    }
-  });
-}
-
-function animateTrains(dt,now){
-  let hasAny=false;
-  Object.values(lines).forEach(line=>{
-    if(!line.trains||!line.trains.length)return;
-    const path=buildLinePath(line);if(path.length<2)return;
-    if(!line._stationFracs)line._stationFracs=buildStationFracs(line);
-
-    updateBlockages(line);
-
-    line.trains.forEach(train=>{
-      if(train.isFreight||!isTrainActive(train))return;
-      hasAny=true;
-      
-      if(Math.random()<0.0001){
-        const delayMs=3000+Math.random()*6000;
-        for(let i=0;i<train.count;i++)train.dwellUntil[i]=Math.max(train.dwellUntil[i]||0,now+delayMs);
-      }
-      
-      for(let i=0;i<train.count;i++){
-        if (train._blockedCars && train._blockedCars[i]) {
-          train.progress[i] = train.prevFrac[i];
-          const arr = posOnPath(path, train.progress[i]);
-          if (train.markers[i]) train.markers[i].setLatLng(L.latLng(arr));
-          continue;
-        }
-
-        if(now<train.dwellUntil[i]){
-          const arr=posOnPath(path,train.progress[i]);
-          if(train.markers[i])train.markers[i].setLatLng(L.latLng(arr));
-          continue;
-        }
-        const prevFrac=train.prevFrac[i];
-        train.progress[i]+=TRAIN_SPEED*dt*train.directions[i];
-        if(train.progress[i]>=1){
-          if(line.circular)train.progress[i]-=1;
-          else{train.progress[i]=1;train.directions[i]=-1;}
-        }else if(train.progress[i]<=0){
-          if(line.circular)train.progress[i]+=1;
-          else{train.directions[i]=1;train.progress[i]=0;}
-        }
-        const curFrac=train.progress[i];
-        let stationHit=null;
-        for(const s of line._stationFracs){
-          if(wasCrossed(prevFrac,curFrac,s.frac,train.directions[i],line.circular)){stationHit=s;break;}
-        }
-        if(stationHit){
-          train.progress[i]=stationHit.frac;
-          train.prevFrac[i]=stationHit.frac;
-          let dwellMs=DWELL_BASE_MS;
-          if(Math.random()<DELAY_CHANCE){
-            const roll=Math.random()*100;
-            if(roll<50)dwellMs+=3000+Math.random()*4000;
-            else if(roll<90)dwellMs+=2000+Math.random()*3000;
-            else if(roll<95)dwellMs+=5000+Math.random()*5000;
-            else dwellMs+=1000+Math.random()*3000;
-          }
-          train.dwellUntil[i]=now+dwellMs;
-        }else{
-          train.prevFrac[i]=curFrac;
-        }
-        const arr=posOnPath(path,train.progress[i]);
-        if(train.markers[i])train.markers[i].setLatLng(L.latLng(arr));
-      }
-    });
-  });
-  if(!hasAny&&!Object.values(lines).some(l=>l.trains.some(t=>t.isFreight&&t.freightActive)))stopAnimLoop();
-}
-
-function stopAllTrainsOnLine(lineId){
-  const line=lines[lineId];if(!line)return;
-  line.trains.forEach(train=>{
-    train.status='stopped';train.freightActive=false;
-    train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
-  });
-  if(!anyTrainRunning())stopAnimLoop();
-}
-function removeTrain(lineId,trainId){
-  const line=lines[lineId];if(!line)return;
-  const train=line.trains.find(t=>t.id===trainId);if(!train)return;
-  train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
-  line.trains=line.trains.filter(t=>t.id!==trainId);
-  if(!anyTrainRunning())stopAnimLoop();
-  buildLinesPanel();updateTrainList();updateTrainTable();updateStatTrains();
-}
-function setTrainRunning(lineId,trainId,running){
-  if(!running){setTrainStatus(lineId,trainId,'stopped');return;}
-  const line=lines[lineId];const train=line?.trains.find(t=>t.id===trainId);
-  if(train&&train.isFreight){train.freightActive=true;spawnFreightMarker(train,line);startAnimLoop();}
-  else setTrainStatus(lineId,trainId,'running');
-}
-
-function openEditTrain(lineId,trainId){
-  const line=lines[lineId];if(!line)return;
-  const train=line.trains.find(t=>t.id===trainId);if(!train)return;
-  editingTrain={lineId,trainId};
-  document.getElementById('et-model').value=train.model;
-  document.getElementById('et-total').value=train.totalCars;
-  document.getElementById('et-per').value=train.carsPerSet;
-  const stSel=document.getElementById('et-status');
-  if(train.isFreight){stSel.value='running';stSel.disabled=true;}
-  else{stSel.value=train.status||'running';stSel.disabled=false;}
-  document.getElementById('et-count-preview').textContent='→ '+Math.floor(train.totalCars/Math.max(1,train.carsPerSet))+' sets';
-  refreshModelSuggestions();
-  document.getElementById('edit-train-modal').classList.add('open');
-}
-function closeEditTrain(){document.getElementById('edit-train-modal').classList.remove('open');editingTrain=null;}
-function saveEditTrain(){
-  if(!editingTrain)return;
-  const{lineId,trainId}=editingTrain;
-  const line=lines[lineId];if(!line)return;
-  const train=line.trains.find(t=>t.id===trainId);if(!train)return;
-  const model=document.getElementById('et-model').value.trim()||train.model;
-  const total=Math.max(1,parseInt(document.getElementById('et-total').value)||train.totalCars);
-  const per=Math.max(1,parseInt(document.getElementById('et-per').value)||train.carsPerSet);
-  const newCount=Math.max(1,Math.floor(total/Math.max(1,per)));
-  const newStatus=train.isFreight?'freight':document.getElementById('et-status').value;
-  train.model=model;train.totalCars=total;train.carsPerSet=per;
-  if(newCount!==train.count&&!train.isFreight){
-    train.count=newCount;
-    const np=[],nd=[];
-    for(let i=0;i<newCount;i++){np.push(i/newCount);nd.push(line.circular&&i>=Math.ceil(newCount/2)?-1:1);}
-    train.progress=np;train.directions=nd;train.dwellUntil=np.map(()=>0);train.prevFrac=[...np];
-  }
-  if(newStatus!==train.status)setTrainStatus(lineId,trainId,newStatus);
-  if(isTrainActive(train)&&!train.isFreight)spawnTrainMarkers(train,line);
-  buildLinesPanel();updateTrainList();updateTrainTable();
-  closeEditTrain();showToast('Train updated');
-}
-document.getElementById('edit-train-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-train-modal'))closeEditTrain();});
-
-function openTransferTrain(lineId,trainId){
-  const line=lines[lineId];if(!line)return;
-  const train=line.trains.find(t=>t.id===trainId);if(!train||train.isFreight)return;
-  transferringTrain={lineId,trainId};
-  const sel=document.getElementById('tt-line');sel.innerHTML='';
-  const avail=Object.values(lines).filter(l=>l.id!==lineId&&l.nodes.filter(n=>n.type==='station').length>=2);
-  if(!avail.length){const o=document.createElement('option');o.value='';o.textContent='— no lines —';sel.appendChild(o);}
-  else avail.forEach(l=>{const o=document.createElement('option');o.value=l.id;o.textContent=l.label+' — '+(l.title||l.label);sel.appendChild(o);});
-  document.getElementById('transfer-train-modal').classList.add('open');
-}
-function closeTransferTrain(){document.getElementById('transfer-train-modal').classList.remove('open');transferringTrain=null;}
-function confirmTransferTrain(){
-  if(!transferringTrain)return;
-  const{lineId,trainId}=transferringTrain;
-  const from=lines[lineId];if(!from)return;
-  const train=from.trains.find(t=>t.id===trainId);if(!train)return;
-  const toId=document.getElementById('tt-line').value;if(!toId){showToast('No target');return;}
-  const to=lines[toId];if(!to)return;
-  train.markers.forEach(m=>map.removeLayer(m));train.markers=[];
-  from.trains=from.trains.filter(t=>t.id!==trainId);
-  train.lineId=toId;train.progress=[];train.directions=[];train.dwellUntil=[];train.prevFrac=[];
-  for(let i=0;i<train.count;i++){
-    train.progress.push(i/train.count);
-    train.directions.push(to.circular&&i>=Math.ceil(train.count/2)?-1:1);
-    train.dwellUntil.push(0);train.prevFrac.push(train.progress[i]);
-  }
-  to.trains.push(train);
-  if(isTrainActive(train)){spawnTrainMarkers(train,to);startAnimLoop();}
-  buildLinesPanel();updateTrainList();updateTrainTable();updateStatTrains();
-  closeTransferTrain();showToast('Train moved to '+to.label);
-}
-document.getElementById('transfer-train-modal').addEventListener('click',e=>{if(e.target===document.getElementById('transfer-train-modal'))closeTransferTrain();});
-
-function updateTrainSection(){
-  const sec=document.getElementById('train-section');
-  if(!activeLineId){sec.classList.remove('visible');return;}
-  sec.classList.add('visible');
-  updateTrainList();updateTrainTable();
-  const line=lines[activeLineId];
-  const fb=document.getElementById('new-freight-btn');
-  if(fb&&line){
-    const dc=getDepotConnectionsForLine(line).length;
-    fb.style.display=dc>=2?'block':'none';
-  }
-}
-function updateTrainTable(){
-  const tbody=document.getElementById('train-status-tbody');if(!tbody)return;
-  tbody.innerHTML='';
-  if(!activeLineId)return;
-  const line=lines[activeLineId];if(!line)return;
-  const statuses={
-    running:{label:'На маршруте',color:'#2ecc71',order:0},
-    testing:{label:'Испытания',color:'#3498db',order:1},
-    stopped:{label:'Не на маршруте',color:'#f39c12',order:2},
-    decommissioned:{label:'Списаны',color:'#e74c3c',order:3},
-    freight:{label:'Грузовой',color:'#9b59b6',order:4},
-    other:{label:'Прочее',color:'#95a5a6',order:5}
-  };
-  const grouped={};
-  line.trains.forEach(t=>{
-    const st=t.status||'running';
-    if(!grouped[st])grouped[st]={models:new Set(),count:0};
-    grouped[st].models.add(t.model);
-    grouped[st].count+=t.count;
-  });
-  const keys=Object.keys(grouped).sort((a,b)=>(statuses[a]?.order??99)-(statuses[b]?.order??99));
-  if(!keys.length){
-    const tr=document.createElement('tr');const td=document.createElement('td');
-    td.colSpan=3;td.style.cssText='text-align:center;color:var(--text-tertiary);font-style:italic;padding:8px';td.textContent='No trains';
-    tr.appendChild(td);tbody.appendChild(tr);return;
-  }
-  keys.forEach(st=>{
-    const info=statuses[st]||{label:st,color:'#666'};
-    const g=grouped[st];
-    const tr=document.createElement('tr');
-    const td1=document.createElement('td');td1.style.color=info.color;td1.style.fontWeight='600';td1.textContent=info.label;
-    const td2=document.createElement('td');td2.textContent=[...g.models].join(', ');
-    const td3=document.createElement('td');td3.textContent=g.count;
-    tr.append(td1,td2,td3);tbody.appendChild(tr);
-  });
-}
-function updateTrainList(){
-  const list=document.getElementById('train-list');list.innerHTML='';
-  if(!activeLineId)return;
-  const line=lines[activeLineId];
-  if(!line||!line.trains.length){list.innerHTML='<div class="no-msg" style="font-size:11px">No trains.</div>';return;}
-  const colorFor=s=>{
-    if(s==='running')return'#2ecc71';if(s==='testing')return'#3498db';
-    if(s==='stopped')return'#f39c12';if(s==='decommissioned')return'#e74c3c';
-    if(s==='freight')return'#9b59b6';return'#95a5a6';
-  };
-  const labels={running:'На маршруте',testing:'Испытания',stopped:'Не на маршруте',decommissioned:'Списаны',freight:'Грузовой',other:'Прочее'};
-  line.trains.forEach(train=>{
-    const st=train.status||'running';
-    const item=document.createElement('div');item.className='train-item';
-    const tdot=document.createElement('div');tdot.className='train-item-dot';
-    tdot.style.cssText=`background:${colorFor(st)};color:${colorFor(st)};box-shadow:0 0 5px ${colorFor(st)}`;
-    const info=document.createElement('div');info.className='train-item-info';
-    const nm=document.createElement('div');nm.className='train-item-name';nm.textContent=train.model+(train.isFreight?' 🚚':'');
-    const sub=document.createElement('div');sub.className='train-item-sub';
-    const extra=train.isFreight?(train.freightActive?' (active)':' (inactive)'):'';
-    sub.textContent=train.count+' · '+train.carsPerSet+' cars · '+(labels[st]||st)+extra;
-    info.append(nm,sub);
-    const btns=document.createElement('div');btns.className='train-item-btns';
-    if(!train.isFreight){
-      const mv=document.createElement('button');mv.className='ti-btn move';mv.textContent='⇄';mv.title='Transfer';
-      mv.addEventListener('click',()=>openTransferTrain(train.lineId,train.id));btns.appendChild(mv);
-    }
-    const ed=document.createElement('button');ed.className='ti-btn edit';ed.textContent='✎';ed.title='Edit';
-    ed.addEventListener('click',()=>openEditTrain(train.lineId,train.id));btns.appendChild(ed);
-    if(train.isFreight){
-      if(train.freightActive){
-        const sp=document.createElement('button');sp.className='ti-btn stop';sp.textContent='Stop';
-        sp.addEventListener('click',()=>{train.freightActive=false;train.markers.forEach(m=>map.removeLayer(m));train.markers=[];updateTrainList();});
-        btns.appendChild(sp);
-      }else{
-        const rn=document.createElement('button');rn.className='ti-btn run';rn.textContent='Run';
-        rn.addEventListener('click',()=>{train.freightActive=true;spawnFreightMarker(train,line);startAnimLoop();updateTrainList();});
-        btns.appendChild(rn);
-      }
-    }else{
-      if(isTrainActive(train)){
-        const sp=document.createElement('button');sp.className='ti-btn stop';sp.textContent='Stop';
-        sp.addEventListener('click',()=>setTrainRunning(train.lineId,train.id,false));btns.appendChild(sp);
-      }else{
-        const rn=document.createElement('button');rn.className='ti-btn run';rn.textContent='Run';
-        rn.addEventListener('click',()=>setTrainRunning(train.lineId,train.id,true));btns.appendChild(rn);
-      }
-    }
-    const dl=document.createElement('button');dl.className='ti-btn del';dl.textContent='Del';
-    dl.addEventListener('click',()=>removeTrain(train.lineId,train.id));btns.appendChild(dl);
-    item.append(tdot,info,btns);list.appendChild(item);
-  });
-  updateStatTrains();
-}
 
 function updateStats(){
   const n=Object.keys(stations).length;
-  const riders=n*3400;const r=Math.min(100,n*3.2);
-  document.getElementById('stat-riders').textContent=n>0?(riders>=1e6?(riders/1e6).toFixed(2)+' mil':riders.toLocaleString()):'—';
-  updateStatTrains();
-}
-function updateStatTrains(){
-  const total=Object.values(lines).reduce((s,l)=>s+l.trains.filter(t=>isTrainActive(t)).reduce((a,t)=>a+t.count,0),0);
-  document.getElementById('stat-trains').textContent=total;
+  const riders=n*3400;
+  document.getElementById('stat-riders').textContent=n>0
+    ?(riders>=1e6?(riders/1e6).toFixed(2)+' mil':riders.toLocaleString())
+    :'—';
 }
 
-function toggleRouteDiagram(){routeOpen=!routeOpen;document.getElementById('route-body').className=routeOpen?'open':'';document.getElementById('rti').className=routeOpen?'open':'';}
+function toggleRouteDiagram(){
+  routeOpen=!routeOpen;
+  document.getElementById('route-body').className=routeOpen?'open':'';
+  document.getElementById('rti').className=routeOpen?'open':'';
+}
 function updateRouteDiagram(){
   const body=document.getElementById('route-content');
-  if(!activeLineId){body.innerHTML='<div class="no-msg">Select a line.</div>';return;}
-  const line=lines[activeLineId];
-  const sNodes=line.nodes.filter(n=>n.type==='station');
-  if(!sNodes.length){body.innerHTML='<div class="no-msg">No stations.</div>';return;}
+  const line=activeLineId?lines[activeLineId]:null;
+  if(!line){body.innerHTML='<div class="no-msg">Select a line.</div>';return;}
+  const sids=line.nodes.filter(n=>n.type==='station'&&stations[n.id]).map(n=>n.id);
+  if(!sids.length){body.innerHTML='<div class="no-msg">No stations.</div>';return;}
   body.innerHTML='';
-  const sids=sNodes.map(n=>n.id);
-  const disp=line.circular?[...sids,sids[0]]:sids;
+  const loop=line.circular&&sids.length>1;
+  const disp=loop?[...sids,sids[0]]:sids;
   disp.forEach((sid,i)=>{
-    const st=stations[sid];if(!st)return;
+    const st=stations[sid];
     if(i>0){const seg=document.createElement('div');seg.className='route-line';seg.style.background=line.bg;body.appendChild(seg);}
     const row=document.createElement('div');row.className='route-item';row.style.cursor='pointer';
     row.addEventListener('click',()=>map.setView(st.latlng,14));
     const dot=document.createElement('div');dot.className='route-dot';dot.style.borderColor=line.bg;
-    const isRet=line.circular&&i===disp.length-1;
+    const isRet=loop&&i===disp.length-1;
     const isXfer=st.lineIds.length>1||Object.values(transfers).some(t=>t.a===sid||t.b===sid);
     if(isXfer){dot.style.width='14px';dot.style.height='14px';dot.style.marginLeft='-1px';}
     const name=document.createElement('span');name.className='route-name';
     name.textContent=st.name+(isRet?' ↩':'')+(isXfer?' ⇄':'');
     row.append(dot,name);body.appendChild(row);
   });
-  if(line.circular){const n=document.createElement('div');n.style.cssText='font-size:10px;color:#b080c0;text-align:center;margin-top:4px';n.textContent='⟳ Circular';body.appendChild(n);}
+  if(line.circular){
+    const n=document.createElement('div');
+    n.style.cssText='font-size:10px;color:#b080c0;text-align:center;margin-top:4px';
+    n.textContent='⟳ Circular';body.appendChild(n);
+  }
 }
 
-function toggleCustomForm(){const f=document.getElementById('custom-line-form');f.style.display=f.style.display==='none'?'block':'none';}
+// ---------- helpers для загрузки/создания линий ----------
+function normColor(c,def){
+  if(typeof c!=='string')return def;
+  c=c.trim();
+  if(/^#[0-9a-f]{6}$/i.test(c))return c.toLowerCase();
+  if(/^#[0-9a-f]{3}$/i.test(c))return '#'+c.slice(1).split('').map(x=>x+x).join('').toLowerCase();
+  return def;
+}
+function cleanLL(a){
+  return(Array.isArray(a)&&Number.isFinite(a[0])&&Number.isFinite(a[1]))?[a[0],a[1]]:null;
+}
+
+function toggleCustomForm(){
+  const f=document.getElementById('custom-line-form');
+  const open=f.style.display==='block';
+  f.style.display=open?'none':'block';
+  if(!open)document.getElementById('cl-name').focus();
+}
 function addCustomLine(){
-  const name=document.getElementById('cl-name').value.trim();if(!name)return;
-  let bg=document.getElementById('cl-bg').value;
-  let fg=document.getElementById('cl-fg').value;
-  if (bg === '#888') bg = '#888888';
-  if (fg === '#fff') fg = '#ffffff';
-  
+  const name=document.getElementById('cl-name').value.trim();
+  if(!name){showToast('Enter a line label');return;}
   const id='CX_'+genId();
-  lines[id]={id,label:name.substring(0,4),title:name,bg,fg,custom:true,nodes:[],circular:false,smooth:true,polylines:[],trains:[],_stationFracs:null};
+  ensureLine({
+    id,label:name.substring(0,4),title:name,
+    bg:normColor(document.getElementById('cl-bg').value,'#888888'),
+    fg:normColor(document.getElementById('cl-fg').value,'#ffffff'),
+    custom:true
+  });
   document.getElementById('cl-name').value='';
-  buildLinesPanel();selectLine(id);
   document.getElementById('custom-line-form').style.display='none';
+  selectLine(id);
 }
 
 function clearAll(){
-  stopAnimLoop();
-  Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{b.polylines.forEach(p=>map.removeLayer(p));b.waypoints.forEach(w=>{if(w.marker)map.removeLayer(w.marker);});});if(dp.marker)map.removeLayer(dp.marker);});
+  if(map){
+    map.closePopup();
+    map.dragging.enable();
+  }
+  clearInsertPreview();
+  connectingSource=null;pendingBranchWaypoint=null;dragState=null;waypointDragging=false;
+  if(depotMode)toggleDepotMode(false);
+
+  Object.values(depots).forEach(dp=>{
+    dp.branches.slice().forEach(b=>removeBranch(dp,b));
+    if(dp.marker)map.removeLayer(dp.marker);
+  });
   depots={};
+
   Object.values(lines).forEach(l=>{
-    l.trains.forEach(t=>{t.markers.forEach(m=>map.removeLayer(m));});
-    l.trains=[];l.polylines.forEach(p=>map.removeLayer(p));
-    l.nodes.forEach(n=>{if(n.type==='waypoint'&&n.marker)map.removeLayer(n.marker);});
-    l.nodes=[];l.polylines=[];l._stationFracs=null;
+    l.polylines.forEach(p=>map.removeLayer(p));l.polylines=[];
+    l.nodes.forEach(n=>{if(n.type==='waypoint'&&n.marker){map.removeLayer(n.marker);n.marker=null;}});
+    l.nodes=[];
   });
   lines={};
+
   Object.values(stations).forEach(st=>{if(st.marker)map.removeLayer(st.marker);});
-  stations={};activeLineId=null;transfers={};transferLines.forEach(l=>map.removeLayer(l));transferLines=[];
-  buildLinesPanel();updateRouteDiagram();updateTrainSection();updateStats();
+  stations={};
+  transfers={};
+  transferLines.forEach(l=>map.removeLayer(l));transferLines=[];
+  activeLineId=null;
+
+  buildLinesPanel();updateRouteDiagram();updateModeLabel();updateStats();
 }
 function startScratch(){if(!confirm('Clear everything?'))return;clearAll();map.setView([20,0],2);}
 
 function saveToFile(){
   const data={
-    version:12,savedAt:new Date().toISOString(),
+    version:13,savedAt:new Date().toISOString(),
     stations:Object.values(stations).map(s=>({id:s.id,latlng:s.latlng,name:s.name,lineIds:s.lineIds})),
     lineMeta:Object.fromEntries(Object.entries(lines).map(([k,v])=>[k,{
-      id:v.id, label:v.label, title:v.title||'', bg:v.bg, fg:v.fg, custom:!!v.custom
+      id:v.id,label:v.label,title:v.title||'',bg:v.bg,fg:v.fg,custom:!!v.custom
     }])),
     lineStates:Object.fromEntries(Object.entries(lines).map(([k,v])=>[k,{
-      nodes:v.nodes.map(n=>n.type==='waypoint'?{type:'waypoint',latlng:n.latlng}:{type:n.type,id:n.id}),
-      circular:v.circular||false,smooth:v.smooth!==false,
-      trains:v.trains.map(t=>({id:t.id,model:t.model,totalCars:t.totalCars,carsPerSet:t.carsPerSet,count:t.count,status:t.status||'stopped',isFreight:t.isFreight||false}))
+      nodes:v.nodes.map(n=>n.type==='waypoint'?{type:'waypoint',latlng:n.latlng}:{type:'station',id:n.id}),
+      circular:v.circular||false,smooth:v.smooth!==false
     }])),
-    depots:Object.values(depots).map(d=>({id:d.id,latlng:d.latlng,name:d.name,branches:d.branches.map(b=>({id:b.id,lineId:b.lineId,startStationId:b.startStationId,waypoints:b.waypoints.map(w=>({id:w.id,latlng:w.latlng}))}))})),
-    transfers:Object.values(transfers),
-    settings:{font:document.getElementById('font-select').value,theme:document.documentElement.getAttribute('data-theme')||'light'}
+    depots:Object.values(depots).map(d=>({
+      id:d.id,latlng:d.latlng,name:d.name,
+      branches:d.branches.map(b=>({
+        id:b.id,lineId:b.lineId,startStationId:b.startStationId,
+        waypoints:b.waypoints.map(w=>({id:w.id,latlng:w.latlng}))
+      }))
+    })),
+    transfers:Object.values(transfers).map(t=>({id:t.id,a:t.a,b:t.b})),
+    settings:{
+      font:document.getElementById('font-select').value,
+      theme:document.documentElement.getAttribute('data-theme')||'light'
+    }
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
   a.download='subway-'+Date.now()+'.json';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast('Saved');
 }
 function loadFromFile(){document.getElementById('file-input').click();}
 function handleFileLoad(evt){
   const file=evt.target.files[0];if(!file)return;
   const r=new FileReader();
+  r.onerror=()=>alert('Could not read file');
   r.onload=e=>{
     try{
       const data=JSON.parse(e.target.result);
+      if(!data||typeof data!=='object'||(!data.lineMeta&&!data.customLines&&!data.stations))
+        throw new Error('Not a subway map file');
       clearAll();
 
-      (data.stations||[]).forEach(sd=>{const st={...sd,marker:null};stations[sd.id]=st;createMarker(st);});
-
-      if(data.lineMeta){
-        Object.entries(data.lineMeta).forEach(([lid,meta])=>{
-          lines[lid]={
-            id:lid,label:meta.label||lid,title:meta.title||'',
-            bg:meta.bg==='#888'?'#888888':(meta.bg||'#888888'),
-            fg:meta.fg==='#fff'?'#ffffff':(meta.fg||'#ffffff'),
-            custom:!!meta.custom,
-            nodes:[],circular:false,smooth:true,
-            polylines:[],trains:[],_stationFracs:null
-          };
-        });
+      // 1. линии
+      const defs=[];
+      if(data.lineMeta&&typeof data.lineMeta==='object'){
+        Object.entries(data.lineMeta).forEach(([id,m])=>defs.push([id,m||{}]));
+      }else if(Array.isArray(data.customLines)){
+        data.customLines.forEach(cl=>{if(cl&&cl.id)defs.push([cl.id,{...cl,custom:true}]);});
       }
-      if(!data.lineMeta&&data.customLines){
-        data.customLines.forEach(cl=>{
-          lines[cl.id]={
-            id:cl.id,label:cl.label||cl.id,title:cl.title||'',
-            bg:cl.bg==='#888'?'#888888':(cl.bg||'#888888'),
-            fg:cl.fg==='#fff'?'#ffffff':(cl.fg||'#ffffff'),
-            custom:true,
-            nodes:[],circular:false,smooth:true,
-            polylines:[],trains:[],_stationFracs:null
-          };
-        });
-      }
+      defs.forEach(([id,m])=>ensureLine({
+        id,label:String(m.label||id).slice(0,4),title:m.title||'',
+        bg:normColor(m.bg,'#888888'),fg:normColor(m.fg,'#ffffff'),custom:!!m.custom
+      }));
 
-      Object.entries(data.lineStates||{}).forEach(([lid,ls])=>{
-        if(!lines[lid])return;
-        lines[lid].circular=ls.circular||false;
-        lines[lid].smooth=ls.smooth!==false;
-        lines[lid].nodes=(ls.nodes||[]).map(n=>{
-          if(n.type==='waypoint')return{type:'waypoint',id:genId(),latlng:n.latlng};
-          return{type:n.type,id:n.id};
-        });
-        lines[lid].trains=(ls.trains||[]).map(t=>{
-          const count=Math.max(1,t.count||1);
-          const progress=[],directions=[],dwellUntil=[],prevFrac=[];
-          for(let i=0;i<count;i++){
-            const p=i/count;
-            progress.push(p);
-            directions.push((ls.circular&&i>=Math.ceil(count/2))?-1:1);
-            dwellUntil.push(0);
-            prevFrac.push(p);
-          }
-          return{...t, lineId: lid, count, progress, directions, dwellUntil, prevFrac,
-            status:t.status||'stopped',freightActive:false,markers:[]};
-        });
-        lines[lid]._stationFracs=null;
+      // 2. станции (без маркеров, они создаются в конце)
+      (Array.isArray(data.stations)?data.stations:[]).forEach(sd=>{
+        const ll=cleanLL(sd&&sd.latlng);
+        if(!sd||!sd.id||!ll)return;
+        stations[sd.id]={
+          id:sd.id,latlng:ll,
+          name:sd.name||nextName('Station',stations),
+          lineIds:(Array.isArray(sd.lineIds)?sd.lineIds:[]).filter(lid=>lines[lid]),
+          marker:null
+        };
       });
 
-      (data.depots||[]).forEach(dd=>{
-        const dp={id:dd.id,latlng:dd.latlng,name:dd.name,marker:null,branches:[]};
-        (dd.branches||[]).forEach(b=>{
+      // 3. узлы линий
+      Object.entries(data.lineStates||{}).forEach(([lid,ls])=>{
+        const l=lines[lid];if(!l||!ls)return;
+        l.circular=!!ls.circular;l.smooth=ls.smooth!==false;l.nodes=[];
+        (Array.isArray(ls.nodes)?ls.nodes:[]).forEach(n=>{
+          if(!n)return;
+          if(n.type==='waypoint'){
+            const ll=cleanLL(n.latlng);
+            if(ll)l.nodes.push({type:'waypoint',id:genId(),latlng:ll});
+          }else if(n.type==='station'&&stations[n.id]){
+            l.nodes.push({type:'station',id:n.id});
+            if(!stations[n.id].lineIds.includes(lid))stations[n.id].lineIds.push(lid);
+          }
+        });
+      });
+      // станции, не входящие ни в одну линию, — «призраки»
+      Object.keys(stations).forEach(id=>{if(!stations[id].lineIds.length)delete stations[id];});
+
+      // 4. трансферы
+      (Array.isArray(data.transfers)?data.transfers:[]).forEach(t=>{
+        if(t&&t.a!==t.b&&stations[t.a]&&stations[t.b]){
+          const id=t.id||genId();transfers[id]={id,a:t.a,b:t.b};
+        }
+      });
+
+      // 5. маркеры станций (теперь линии и трансферы известны, стиль будет верным)
+      Object.values(stations).forEach(st=>createMarker(st));
+
+      // 6. депо
+      (Array.isArray(data.depots)?data.depots:[]).forEach(dd=>{
+        const ll=cleanLL(dd&&dd.latlng);if(!ll)return;
+        const id=dd.id||genId();
+        const dp={id,latlng:ll,name:dd.name||nextName('Depot',depots),marker:null,branches:[]};
+        (Array.isArray(dd.branches)?dd.branches:[]).forEach(b=>{
+          if(!b||!lines[b.lineId]||!stations[b.startStationId])return;
+          if(dp.branches.some(x=>x.lineId===b.lineId))return;
           dp.branches.push({
             id:b.id||genId(),lineId:b.lineId,startStationId:b.startStationId,
-            waypoints:(b.waypoints||[]).map(w=>({id:w.id||genId(),latlng:w.latlng,marker:null})),
+            waypoints:(Array.isArray(b.waypoints)?b.waypoints:[])
+              .map(w=>({id:(w&&w.id)||genId(),latlng:cleanLL(w&&w.latlng),marker:null}))
+              .filter(w=>w.latlng),
             polylines:[]
           });
         });
-        depots[dd.id]=dp;
+        depots[id]=dp;
         createDepotMarker(dp);
       });
 
-      (data.transfers||[]).forEach(t=>{
-        if(stations[t.a]&&stations[t.b])transfers[t.id]={id:t.id,a:t.a,b:t.b};
-      });
-      redrawTransfers();
-
+      // 7. отрисовка
       Object.values(lines).forEach(l=>{
-        if(l.nodes.length>=2)redrawLine(l);
+        redrawLine(l);
         l.nodes.forEach(n=>{if(n.type==='waypoint')createWaypointMarker(l,n);});
       });
       Object.values(depots).forEach(dp=>{
@@ -1706,52 +1189,55 @@ function handleFileLoad(evt){
           b.waypoints.forEach(w=>createBranchWaypointMarker(dp,b,w));
         });
       });
+      redrawTransfers();
 
-      if(data.settings){
-        if(data.settings.font){const fs=document.getElementById('font-select');if(fs){fs.value=data.settings.font;changeFont(data.settings.font);}}
-        if(data.settings.theme)setTheme(data.settings.theme);
+      // 8. настройки
+      const s=data.settings||{};
+      if(typeof s.font==='string'){
+        const fs=document.getElementById('font-select');
+        if(fs){
+          const prev=fs.value;fs.value=s.font;
+          if(fs.value===s.font)changeFont(s.font);else fs.value=prev;
+        }
       }
-      
-      let anyActive = false;
-      Object.values(lines).forEach(l=>{
-        l.trains.forEach(t=>{
-          if(isTrainActive(t)){
-            anyActive = true;
-            if(!t.isFreight){
-              spawnTrainMarkers(t, l);
-            } else {
-              t.freightActive = false;
-            }
-          }
-        });
-      });
-      if(anyActive) startAnimLoop();
+      if(s.theme==='light'||s.theme==='dark')setTheme(s.theme);
 
-      buildLinesPanel();
-      updateStats();
-      updateWaypointVisibility();
+      buildLinesPanel();updateRouteDiagram();updateWaypointVisibility();updateModeLabel();updateStats();
+
+      const pts=[...Object.values(stations).map(st=>st.latlng),...Object.values(depots).map(d=>d.latlng)];
+      if(pts.length)map.fitBounds(L.latLngBounds(pts).pad(0.2),{maxZoom:16});
+
       showToast('Loaded '+Object.keys(stations).length+' stations, '+Object.keys(lines).length+' lines');
-    }catch(err){alert('Load failed: '+err.message);console.error(err);}
+    }catch(err){
+      console.error(err);
+      alert('Load failed: '+err.message);
+      try{clearAll();}catch(_){}
+    }
   };
   r.readAsText(file);evt.target.value='';
 }
 
 function updateModeLabel(){
   const el=document.getElementById('mode-label');
+  const l=activeLineId?lines[activeLineId]:null;
   if(pendingBranchWaypoint)el.textContent='Click map to place branch waypoint';
   else if(depotMode)el.textContent='🏭 Depot mode — click map';
-  else if(activeLineId){
-    const l=lines[activeLineId];
-    el.textContent='Line '+l.label+' — '+(editMode==='waypoint'?'click to add waypoints':'click to add stations');
-  }else el.textContent='Select a line, then click the map';
+  else if(l)el.textContent='Line '+l.label+' — '+(editMode==='waypoint'?'click to add waypoints':'click to add stations');
+  else el.textContent='Select a line, then click the map';
 }
 let toastTimer=null;
 function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',2600);
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.style.display='none';},2600);
 }
 function openAbout(){document.getElementById('about-modal').classList.add('open');}
 function closeAbout(){document.getElementById('about-modal').classList.remove('open');}
+
+// клик по тёмному фону закрывает модалку (скриншот закрывается своей функцией)
+document.querySelectorAll('.modal-ov').forEach(ov=>{
+  if(ov.id==='screenshot-modal')return;
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');});
+});
 
 function generateScreenshot(){
   document.getElementById('screenshot-modal').classList.add('open');
@@ -1761,7 +1247,7 @@ function generateScreenshot(){
 async function renderScreenshot() {
   const showMapBg = document.getElementById('snap-map-bg').checked;
   const visualScale = parseFloat(document.getElementById('snap-scale').value) || 1.0;
-  const resMultiplier = parseFloat(document.getElementById('snap-res').value) || 2.0;
+  let resMultiplier = parseFloat(document.getElementById('snap-res').value) || 2.0;
   
   const imgEl = document.getElementById('snapshot-img');
   const loadingEl = document.getElementById('snapshot-loading');
@@ -1771,31 +1257,82 @@ async function renderScreenshot() {
   loadingEl.textContent = "Preparing...";
   lastSnapshotDataUrl = null;
 
-  const pts=[];
-  Object.values(stations).forEach(s=>pts.push(s.latlng));
-  Object.values(lines).forEach(l=>{l.nodes.forEach(n=>{if(n.type==='waypoint')pts.push(n.latlng);});});
-  Object.values(depots).forEach(dp=>{pts.push(dp.latlng);dp.branches.forEach(b=>{b.waypoints.forEach(w=>pts.push(w.latlng));});});
+  // 1. Собираем ВСЕ точки для границ
+  const pts = [];
+  const addPt = (ll) => { if(ll) pts.push(ll); };
+
+  // Станции
+  Object.values(stations).forEach(s => addPt(s.latlng));
   
-  if(!pts.length){
+  // Линии (используем steps=24, чтобы точно совпадало с отрисовкой)
+  Object.values(lines).forEach(l => {
+    l.nodes.forEach(n => { if(n.type === 'waypoint') addPt(n.latlng); });
+    const lPts = getLinePoints(l);
+    if (lPts.length >= 2) {
+      const closed = l.circular && lPts.length > 2;
+      let drawPts = closed ? [...lPts, lPts[0]] : lPts;
+      if (l.smooth !== false) drawPts = catmullRom(closed ? drawPts.slice(0, -1) : drawPts, closed, 24);
+      drawPts.forEach(p => addPt(p));
+    }
+  });
+  
+  // Депо и их ветки
+  Object.values(depots).forEach(dp => {
+    addPt(dp.latlng);
+    dp.branches.forEach(b => {
+      b.waypoints.forEach(w => addPt(w.latlng));
+      const line = lines[b.lineId];
+      const sSt = stations[b.startStationId];
+      if (line && sSt) {
+        const bPts = [sSt.latlng, ...b.waypoints.map(w => w.latlng), dp.latlng];
+        let draw = line.smooth !== false ? catmullRom(bPts, false, 24) : bPts;
+        draw.forEach(p => addPt(p));
+      }
+    });
+  });
+  
+  if (!pts.length) {
     showToast('Nothing to screenshot');
     closeScreenshot();
     return;
   }
   
-  const bounds=L.latLngBounds(pts);
-  bounds.pad(0.15);
+  // 2. Считаем границы с большим запасом
+  const bounds = L.latLngBounds(pts);
+  bounds.pad(0.3); // Увеличенный отступ
   
-  let zoom = map.getBoundsZoom(bounds);
-  zoom = Math.min(zoom, 16);
+  // Принудительно расширяем границы на всякий случай
+  const latSpan = Math.max(0.001, bounds.getNorth() - bounds.getSouth());
+  const lngSpan = Math.max(0.001, bounds.getEast() - bounds.getWest());
+  bounds.extend([bounds.getNorth() + latSpan * 0.1, bounds.getWest() - lngSpan * 0.1]);
+  bounds.extend([bounds.getSouth() - latSpan * 0.1, bounds.getEast() + lngSpan * 0.1]);
   
-  const nw=bounds.getNorthWest(),se=bounds.getSouthEast();
-  const p1=map.project(nw,zoom),p2=map.project(se,zoom);
+  // 3. Фиксированный высокий зум
+  let zoom = 16; 
+  let p1 = map.project(bounds.getNorthWest(), zoom);
+  let p2 = map.project(bounds.getSouthEast(), zoom);
+  let baseWidth = Math.abs(p2.x - p1.x);
+  let baseHeight = Math.abs(p2.y - p1.y);
   
-  // Базовые размеры (виртуальные)
-  const padPx = 120 * visualScale;
-  const baseWidth = Math.abs(p2.x-p1.x) + padPx * 2;
-  const baseHeight = Math.abs(p2.y-p1.y) + padPx * 2;
+  const MAX_DIM = 16000;   // Безопасный лимит стороны
+  const MAX_AREA = 150000000; // Безопасный лимит площади
   
+  const padPx = 150 * visualScale; 
+  
+  // Понижаем зум, пока размеры не станут безопасными
+  while ((baseWidth * resMultiplier + padPx * 2 > MAX_DIM || 
+         (baseHeight * resMultiplier + padPx * 2 > MAX_DIM) || 
+         ((baseWidth * resMultiplier + padPx * 2) * (baseHeight * resMultiplier + padPx * 2) > MAX_AREA)) && zoom > 1) {
+    zoom--;
+    p1 = map.project(bounds.getNorthWest(), zoom);
+    p2 = map.project(bounds.getSouthEast(), zoom);
+    baseWidth = Math.abs(p2.x - p1.x);
+    baseHeight = Math.abs(p2.y - p1.y);
+  }
+
+  const totalBaseWidth = baseWidth + padPx * 2;
+  const totalBaseHeight = baseHeight + padPx * 2;
+
   const linesArr = Object.values(lines);
   const cols = 3;
   const rowH = 50 * visualScale;
@@ -1803,31 +1340,31 @@ async function renderScreenshot() {
   const legendPaddingBottom = 60 * visualScale;
   const baseLegendHeight = linesArr.length > 0 ? (legendPaddingTop + Math.ceil(linesArr.length / cols) * rowH + legendPaddingBottom) : 0;
 
-  // Реальные размеры холста (с учетом разрешения)
-  const canvasWidth = Math.round(baseWidth * resMultiplier);
-  const canvasHeight = Math.round((baseHeight + baseLegendHeight) * resMultiplier);
+  // Итоговые размеры холста
+  const canvasWidth = Math.ceil(totalBaseWidth * resMultiplier);
+  const canvasHeight = Math.ceil((totalBaseHeight + baseLegendHeight) * resMultiplier);
 
-  const canvas=document.createElement('canvas');
-  canvas.width=canvasWidth;
-  canvas.height=canvasHeight;
-  const ctx=canvas.getContext('2d');
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  const ctx = canvas.getContext('2d');
   
-  // Масштабируем контекст для рендера в высоком разрешении
   ctx.scale(resMultiplier, resMultiplier);
   
-  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-  const bg=isDark?'#1a1a1a':'#fcfcfc';
-  const text=isDark?'#eee':'#000';
-  const xfer=isDark?'#fff':'#000';
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const bg = isDark ? '#1a1a1a' : '#fcfcfc';
+  const text = isDark ? '#eee' : '#000';
+  const xfer = isDark ? '#fff' : '#000';
   
-  ctx.fillStyle=bg;
-  ctx.fillRect(0,0,baseWidth,baseHeight+baseLegendHeight);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, totalBaseWidth, totalBaseHeight + baseLegendHeight);
 
-  const getPt=ll=>{
-    const p=map.project(ll,zoom);
-    return {x: p.x - p1.x + padPx, y: p.y - p1.y + padPx};
+  const getPt = ll => {
+    const p = map.project(ll, zoom);
+    return { x: p.x - p1.x + padPx, y: p.y - p1.y + padPx };
   };
 
+  // 4. Рисуем фон карты
   if (showMapBg && currentTile && currentTile._url) {
     loadingEl.textContent = "Loading map tiles...";
     
@@ -1837,9 +1374,13 @@ async function renderScreenshot() {
     const maxTileY = Math.floor((p2.y + padPx) / 256);
     
     const promises = [];
+    let tilesDrawn = 0;
     
     for (let x = minTileX; x <= maxTileX; x++) {
       for (let y = minTileY; y <= maxTileY; y++) {
+        if (tilesDrawn > 4000) continue; 
+        tilesDrawn++;
+        
         let url = currentTile._url;
         let subdomains = currentTile.options.subdomains || 'abc';
         if (typeof subdomains === 'string') subdomains = subdomains.split('');
@@ -1874,141 +1415,147 @@ async function renderScreenshot() {
     loadingEl.textContent = "Drawing lines...";
   }
 
-  Object.values(depots).forEach(dp=>{dp.branches.forEach(b=>{
-    const line=lines[b.lineId];const sSt=stations[b.startStationId];
-    if(!line||!sSt)return;
-    const bPts=[sSt.latlng,...b.waypoints.map(w=>w.latlng),dp.latlng];
+  // 5. Рисуем ветки к депо
+  Object.values(depots).forEach(dp => { dp.branches.forEach(b => {
+    const line = lines[b.lineId]; const sSt = stations[b.startStationId];
+    if (!line || !sSt) return;
+    const bPts = [sSt.latlng, ...b.waypoints.map(w => w.latlng), dp.latlng];
     let draw;
-    if(line.smooth!==false&&bPts.length>=2)draw=catmullRom(bPts,false);else draw=bPts;
+    if (line.smooth !== false && bPts.length >= 2) draw = catmullRom(bPts, false, 24); else draw = bPts;
     ctx.beginPath();
-    draw.forEach((p,i)=>{const pt=getPt(p);if(i===0)ctx.moveTo(pt.x,pt.y);else ctx.lineTo(pt.x,pt.y);});
-    ctx.strokeStyle=line.bg;ctx.lineWidth=12*visualScale;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
-  });});
+    draw.forEach((p, i) => { const pt = getPt(p); if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+    ctx.strokeStyle = line.bg; ctx.lineWidth = 12 * visualScale; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
+  }); });
   
-  Object.values(lines).forEach(line=>{
-    const lPts=getLinePoints(line);if(lPts.length<2)return;
-    const closed=line.circular&&lPts.length>2;
-    let drawPts=closed?[...lPts,lPts[0]]:lPts;
-    if(line.smooth!==false)drawPts=catmullRom(closed?drawPts.slice(0,-1):drawPts,closed);
+  // 6. Рисуем основные линии
+  Object.values(lines).forEach(line => {
+    const lPts = getLinePoints(line); if (lPts.length < 2) return;
+    const closed = line.circular && lPts.length > 2;
+    let drawPts = closed ? [...lPts, lPts[0]] : lPts;
+    if (line.smooth !== false) drawPts = catmullRom(closed ? drawPts.slice(0, -1) : drawPts, closed, 24);
     ctx.beginPath();
-    drawPts.forEach((p,i)=>{const pt=getPt(p);if(i===0)ctx.moveTo(pt.x,pt.y);else ctx.lineTo(pt.x,pt.y);});
-    ctx.strokeStyle=line.bg;ctx.lineWidth=14*visualScale;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
+    drawPts.forEach((p, i) => { const pt = getPt(p); if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+    ctx.strokeStyle = line.bg; ctx.lineWidth = 14 * visualScale; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
     
-    if(drawPts.length>2){
+    if (drawPts.length > 2) {
       ctx.save();
-      ctx.font=`bold ${44*visualScale}px sans-serif`;
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      const midIdx=Math.floor(drawPts.length/2);
-      const pt1=getPt(drawPts[midIdx]),pt2=getPt(drawPts[midIdx+1]||drawPts[midIdx]);
-      let angle=Math.atan2(pt2.y-pt1.y,pt2.x-pt1.x);
-      if(angle>Math.PI/2||angle<-Math.PI/2)angle+=Math.PI;
-      ctx.translate(pt1.x,pt1.y);ctx.rotate(angle);
+      ctx.font = `bold ${44 * visualScale}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const midIdx = Math.floor(drawPts.length / 2);
+      const pt1 = getPt(drawPts[midIdx]), pt2 = getPt(drawPts[midIdx + 1] || drawPts[midIdx]);
+      let angle = Math.atan2(pt2.y - pt1.y, pt2.x - pt1.x);
+      if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
+      ctx.translate(pt1.x, pt1.y); ctx.rotate(angle);
       
-      ctx.strokeStyle=bg;ctx.lineWidth=12*visualScale;ctx.strokeText(line.label,0,-32*visualScale);
-      ctx.fillStyle=line.bg;ctx.fillText(line.label,0,-32*visualScale);
+      ctx.strokeStyle = bg; ctx.lineWidth = 12 * visualScale; ctx.strokeText(line.label, 0, -32 * visualScale);
+      ctx.fillStyle = line.bg; ctx.fillText(line.label, 0, -32 * visualScale);
       ctx.restore();
     }
   });
   
-  Object.values(transfers).forEach(t=>{
-    const s1=stations[t.a],s2=stations[t.b];if(!s1||!s2)return;
-    const pt1=getPt(s1.latlng),pt2=getPt(s2.latlng);
-    ctx.beginPath();ctx.moveTo(pt1.x,pt1.y);ctx.lineTo(pt2.x,pt2.y);
-    ctx.strokeStyle=xfer;ctx.lineWidth=8*visualScale;ctx.stroke();
+  // 7. Рисуем пересадки
+  Object.values(transfers).forEach(t => {
+    const s1 = stations[t.a], s2 = stations[t.b]; if (!s1 || !s2) return;
+    const pt1 = getPt(s1.latlng), pt2 = getPt(s2.latlng);
+    ctx.beginPath(); ctx.moveTo(pt1.x, pt1.y); ctx.lineTo(pt2.x, pt2.y);
+    ctx.strokeStyle = xfer; ctx.lineWidth = 8 * visualScale; ctx.stroke();
   });
 
-  Object.values(depots).forEach(dp=>{
-    const pt=getPt(dp.latlng);
+  // 8. Рисуем депо
+  Object.values(depots).forEach(dp => {
+    const pt = getPt(dp.latlng);
     const rad = 18 * visualScale;
-    ctx.beginPath();ctx.arc(pt.x,pt.y,rad,0,Math.PI*2);
-    ctx.fillStyle=isDark?'#2a2a2a':'#fff';ctx.fill();
-    ctx.lineWidth=5*visualScale;ctx.strokeStyle='#ff9800';ctx.stroke();
+    ctx.beginPath(); ctx.arc(pt.x, pt.y, rad, 0, Math.PI * 2);
+    ctx.fillStyle = isDark ? '#2a2a2a' : '#fff'; ctx.fill();
+    ctx.lineWidth = 5 * visualScale; ctx.strokeStyle = '#ff9800'; ctx.stroke();
     
-    ctx.font=`bold ${24*visualScale}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillStyle='#ff9800';ctx.fillText('🏭',pt.x,pt.y);
+    ctx.font = `bold ${24 * visualScale}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ff9800'; ctx.fillText('🏭', pt.x, pt.y);
     
-    ctx.font=`bold ${32*visualScale}px sans-serif`;
+    ctx.font = `bold ${32 * visualScale}px sans-serif`;
     let textW = ctx.measureText(dp.name).width;
     let tx = pt.x;
-    if (tx - textW/2 < 10) tx = textW/2 + 10;
-    if (tx + textW/2 > baseWidth - 10) tx = baseWidth - textW/2 - 10;
+    if (tx - textW / 2 < 10) tx = textW / 2 + 10;
+    if (tx + textW / 2 > totalBaseWidth - 10) tx = totalBaseWidth - textW / 2 - 10;
     const ty = pt.y + 50 * visualScale;
     
-    ctx.strokeStyle=bg;ctx.lineWidth=8*visualScale;ctx.strokeText(dp.name,tx,ty);
-    ctx.fillStyle=text;ctx.fillText(dp.name,tx,ty);
+    ctx.strokeStyle = bg; ctx.lineWidth = 8 * visualScale; ctx.strokeText(dp.name, tx, ty);
+    ctx.fillStyle = text; ctx.fillText(dp.name, tx, ty);
   });
   
-  Object.values(stations).forEach(st=>{
-    const pt=getPt(st.latlng);
+  // 9. Рисуем станции
+  Object.values(stations).forEach(st => {
+    const pt = getPt(st.latlng);
     const rad = 14 * visualScale;
     
-    ctx.beginPath();ctx.arc(pt.x,pt.y,rad,0,Math.PI*2);
-    ctx.fillStyle=isDark?'#222':'#fff';ctx.fill();
-    ctx.lineWidth=6*visualScale;
+    ctx.beginPath(); ctx.arc(pt.x, pt.y, rad, 0, Math.PI * 2);
+    ctx.fillStyle = isDark ? '#222' : '#fff'; ctx.fill();
+    ctx.lineWidth = 6 * visualScale;
     
-    const fl=lines[st.lineIds[0]];ctx.strokeStyle=fl?fl.bg:'#888';
-    const isX=st.lineIds.length>1||Object.values(transfers).some(t=>t.a===st.id||t.b===st.id);
+    const fl = lines[st.lineIds[0]]; ctx.strokeStyle = fl ? fl.bg : '#888';
+    const isX = st.lineIds.length > 1 || Object.values(transfers).some(t => t.a === st.id || t.b === st.id);
     
-    if(isX){
-      ctx.lineWidth=5*visualScale;ctx.strokeStyle='#fff';ctx.stroke();
-      ctx.beginPath();ctx.arc(pt.x,pt.y,18*visualScale,0,Math.PI*2);
-      ctx.lineWidth=3*visualScale;ctx.strokeStyle=xfer;ctx.stroke();
+    if (isX) {
+      ctx.lineWidth = 5 * visualScale; ctx.strokeStyle = '#fff'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 18 * visualScale, 0, Math.PI * 2);
+      ctx.lineWidth = 3 * visualScale; ctx.strokeStyle = xfer; ctx.stroke();
     }
     else ctx.stroke();
     
-    ctx.font=`bold ${34*visualScale}px sans-serif`;
-    ctx.textAlign='center';
+    ctx.font = `bold ${34 * visualScale}px sans-serif`;
+    ctx.textAlign = 'center';
     let textW = ctx.measureText(st.name).width;
     let tx = pt.x;
-    if (tx - textW/2 < 10) tx = textW/2 + 10;
-    if (tx + textW/2 > baseWidth - 10) tx = baseWidth - textW/2 - 10;
+    if (tx - textW / 2 < 10) tx = textW / 2 + 10;
+    if (tx + textW / 2 > totalBaseWidth - 10) tx = totalBaseWidth - textW / 2 - 10;
     const ty = pt.y + 48 * visualScale;
     
-    ctx.strokeStyle=bg;ctx.lineWidth=10*visualScale;ctx.strokeText(st.name,tx,ty);
-    ctx.fillStyle=text;ctx.fillText(st.name,tx,ty);
+    ctx.strokeStyle = bg; ctx.lineWidth = 10 * visualScale; ctx.strokeText(st.name, tx, ty);
+    ctx.fillStyle = text; ctx.fillText(st.name, tx, ty);
   });
   
+  // 10. Рисуем легенду
   if (baseLegendHeight > 0) {
     ctx.fillStyle = isDark ? '#111' : '#f0f0f0';
-    ctx.fillRect(0, baseHeight, baseWidth, baseLegendHeight);
+    ctx.fillRect(0, totalBaseHeight, totalBaseWidth, baseLegendHeight);
     
     ctx.strokeStyle = isDark ? '#333' : '#ccc';
-    ctx.lineWidth = 2*visualScale;
-    ctx.beginPath(); ctx.moveTo(0, baseHeight); ctx.lineTo(baseWidth, baseHeight); ctx.stroke();
+    ctx.lineWidth = 2 * visualScale;
+    ctx.beginPath(); ctx.moveTo(0, totalBaseHeight); ctx.lineTo(totalBaseWidth, totalBaseHeight); ctx.stroke();
     
-    ctx.font=`bold ${40*visualScale}px sans-serif`;
-    ctx.textAlign='left';
-    ctx.textBaseline='middle';
-    ctx.fillStyle=text;
-    ctx.fillText('Lines', 60 * visualScale, baseHeight + legendPaddingTop * 0.7);
+    ctx.font = `bold ${40 * visualScale}px sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = text;
+    ctx.fillText('Lines', 60 * visualScale, totalBaseHeight + legendPaddingTop * 0.7);
     
-    const colWidth = (baseWidth - 120 * visualScale) / cols;
+    const colWidth = (totalBaseWidth - 120 * visualScale) / cols;
     
     linesArr.forEach((l, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
       const x = 60 * visualScale + col * colWidth;
-      const y = baseHeight + legendPaddingTop + (row * rowH);
+      const y = totalBaseHeight + legendPaddingTop + (row * rowH);
       
       ctx.beginPath();
       ctx.arc(x + 20 * visualScale, y, 18 * visualScale, 0, Math.PI * 2);
       ctx.fillStyle = l.bg;
       ctx.fill();
       
-      ctx.font = `bold ${22*visualScale}px sans-serif`;
+      ctx.font = `bold ${22 * visualScale}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillStyle = l.fg;
       ctx.fillText(l.label, x + 20 * visualScale, y + 2 * visualScale);
       
-      ctx.font = `bold ${30*visualScale}px sans-serif`;
+      ctx.font = `bold ${30 * visualScale}px sans-serif`;
       ctx.textAlign = 'left';
       ctx.fillStyle = text;
       ctx.fillText(l.title || l.label, x + 55 * visualScale, y + 2 * visualScale);
     });
   }
 
-  lastSnapshotDataUrl=canvas.toDataURL('image/png');
-  imgEl.src=lastSnapshotDataUrl;
+  lastSnapshotDataUrl = canvas.toDataURL('image/png');
+  imgEl.src = lastSnapshotDataUrl;
   imgEl.style.display = 'block';
   loadingEl.style.display = 'none';
 }
